@@ -4,7 +4,7 @@ Pragya Singh 100974148
 Sherry Wang
 Ben Bozec 101034327
 Alan Lin 101036660
-Lexa Minsky
+Lexa Minsky 100324946
 
 Contributions: 
 
