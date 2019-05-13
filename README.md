@@ -1,7 +1,7 @@
 # SYSC3303_Project
 Group Members: 
 Pragya Singh 100974148
-Sherry Wang
+Sherry Wang 101172387
 Ben Bozec 101034327
 Alan Lin 101036660
 Lexa Minsky 100324946
