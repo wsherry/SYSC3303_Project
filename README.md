@@ -8,24 +8,24 @@ Lexa Minsky
 
 Contributions: 
 
-Lexa Minsky
-1.Mulithreading between the client and the server
-2.UML Class Diagrams
+Lexa Minsky:
+-Mulithreading between the client and the server
+-UML Class Diagrams
 
-Ben Bozec
-1.Implemented the "shut down" functioanlity that shut down a server
+Ben Bozec:
+-Implemented the "shut down" functioanlity that shut down a server
 
-Alan Lin
-1.Command line setup in order to encapsulate a simple userinterface
+Alan Lin:
+-Command line setup in order to encapsulate a simple userinterface
 
-Pragya Singh
-1.Steady state file tranfers 
-2.State diagrams
-3.Read me file
+Pragya Singh:
+-Steady state file tranfers 
+-State diagrams
+-Read me file
 
-Sherry Wang
-1.Steady state file tranfers 
-2.Use case diagrams
+Sherry Wang:
+-Steady state file tranfers 
+-Use case diagrams
 
 Project Overview for Iteration 0 and 1:
 The programs allows clients to establish WRQ connections and RRQ connections with the server. This is done due to the implementation of steady-state file transfer between the client and the server. Ever RRQ the server will respond with specific data block of 0-1 bytes in order to see if a file was written or read from properly respond witha ACK block 0. For every WRQ request ther sever will The error simulator will just pass on packets (client to server, and server to client).
