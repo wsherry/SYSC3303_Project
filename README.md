@@ -4,11 +4,11 @@ Pragya Singh 100974148
 Sherry Wang 101172387
 Ben Bozec 101034327
 Alan Lin 101036660
-Lexa Minsky 100324946
+Alexei Tchekansky 100324946
 
 Contributions: 
 
-Lexa Minsky:
+Alexei Tchekansky:
 -Mulithreading between the client and the server
 -UML Class Diagrams
 
