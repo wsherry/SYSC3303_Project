@@ -5,7 +5,7 @@
 
 import java.io.*;
 import java.net.*;
-//test
+
 public class TFTPClient {
 
    private DatagramPacket sendPacket, receivePacket;
