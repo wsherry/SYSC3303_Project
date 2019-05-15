@@ -5,11 +5,19 @@
 
 import java.io.*;
 import java.net.*;
+import java.util.*;
+
 
 public class TFTPClient {
 
    private DatagramPacket sendPacket, receivePacket;
    private DatagramSocket sendReceiveSocket;
+   private static boolean normalMode = true; //true for normal and false for test
+   private static boolean verboseMode = false; //false for quiet and true for verbose
+   private static String ipAddress = "";
+   private static String clientDirectory = "";
+   private static String serverDirectory = "";
+   private static int count = 0;
    
    // we can run in normal (send directly to server) or test
    // (send to simulator) mode
@@ -30,12 +38,47 @@ public class TFTPClient {
 
    public void sendAndReceive()
    {
-      byte[] msg = new byte[100], // message we send
+	   Scanner sc = new Scanner (System.in);
+	   //user toggle verbose or quiets mode
+	   String input = "";
+	   byte readWrite;
+	   
+	   if (count > 0) {
+		   System.out.println("Enter 1 to change configerations or nothing to leave configs unchanged: ");
+		   while (!(input.equals("1") || input.equals(""))){
+			   if (input.equals("1")) {
+				   enterDetails();
+			   }
+		   }
+	   }
+		   
+	   while (!(input.equals("1") || input.equals("2"))){
+		   System.out.println("\nEnter '1' for read or '2' write request: ");
+		   input = sc.nextLine();
+
+		   if (input.equals("1")) {
+			   readWrite = (byte) 1;
+		   } else if (input.equals("2")) {
+			   readWrite = (byte) 2;
+		   } else {
+			   System.out.print(input + " is not 1 or 2.\n");
+		   }
+	   }
+	   
+	   input = " ";
+	   //while (found){ //keep asking for file until valid file is found in directory
+		   System.out.println("\nEnter the name of the file: ");
+		   input = sc.nextLine();
+
+		   //CHECK IF FILE EXISTS
+	   //}
+	   
+	   byte[] msg = new byte[100], // message we send
              fn, // filename as an array of bytes
              md, // mode as an array of bytes
              data; // reply as array of bytes
-      String filename, mode; // filename and mode as Strings
-      int j, len, sendPort;
+	   String filename, mode; // filename and mode as Strings
+	   int j, len, sendPort;
       
       // In the assignment, students are told to send to 23, so just:
       // sendPort = 23; 
@@ -48,13 +91,9 @@ public class TFTPClient {
          sendPort = 69;
       else
          sendPort = 23;
-      
-      // sends 10 packets -- 5 reads, 5 writes, 1 invalid
-      for(int i=1; i<=11; i++) {
-
-         System.out.println("Client: creating packet " + i + ".");
+      System.out.println("Client: creating packet.");
          
-         // Prepare a DatagramPacket and send it via sendReceiveSocket
+      // Prepare a DatagramPacket and send it via sendReceiveSocket
          // to sendPort on the destination host (also on this machine).
 
          // if i even (2,4,6,8,10), it's a read; otherwise a write
@@ -62,13 +101,8 @@ public class TFTPClient {
          // And #11 is invalid (opcode 07 here -- could be anything)
 
         msg[0] = 0;
-        if(i%2==0) 
-           msg[1]=1;
-        else 
-           msg[1]=2;
-           
-        if(i==11) 
-           msg[1]=7; // if it's the 11th time, send an invalid request
+        msg[1]=1;
+        msg[1]=2;
 
         // next we have a file name -- let's just pick one
         filename = "test.txt";
@@ -120,14 +154,18 @@ public class TFTPClient {
            System.exit(1);
         }
 
-        System.out.println("Client: sending packet " + i + ".");
-        System.out.println("To host: " + sendPacket.getAddress());
-        System.out.println("Destination host port: " + sendPacket.getPort());
-        len = sendPacket.getLength();
-        System.out.println("Length: " + len);
-        System.out.println("Containing: ");
-        for (j=0;j<len;j++) {
-            System.out.println("byte " + j + " " + msg[j]);
+        if (verboseMode) {
+        	System.out.println("Client: sending packet.");
+        	System.out.println("To host: " + sendPacket.getAddress());
+        	System.out.println("Destination host port: " + sendPacket.getPort());
+        	len = sendPacket.getLength();
+        	System.out.println("Length: " + len);
+        	System.out.println("Containing: ");
+        	for (j=0;j<len;j++) {
+        		System.out.println("byte " + j + " " + msg[j]);
+        	}
+        } else {
+        	System.out.println("Client: sending packet.");
         }
         
         // Form a String from the byte array, and print the string.
@@ -161,27 +199,109 @@ public class TFTPClient {
         }
 
         // Process the received datagram.
-        System.out.println("Client: Packet received:");
-        System.out.println("From host: " + receivePacket.getAddress());
-        System.out.println("Host port: " + receivePacket.getPort());
-        len = receivePacket.getLength();
-        System.out.println("Length: " + len);
-        System.out.println("Containing: ");
-        for (j=0;j<len;j++) {
-            System.out.println("byte " + j + " " + data[j]);
+        if (verboseMode) {
+        	System.out.println("Client: Packet received:");
+        	System.out.println("From host: " + receivePacket.getAddress());
+        	System.out.println("Host port: " + receivePacket.getPort());
+        	len = receivePacket.getLength();
+        	System.out.println("Length: " + len);
+        	System.out.println("Containing: ");
+        	for (j=0;j<len;j++) {
+        		System.out.println("byte " + j + " " + data[j]);
+        	}
+        } else {
+            System.out.println("Client: Packet received:");
         }
         
-        System.out.println();
-
-      } // end of loop
+        System.out.println();      
 
       // We're finished, so close the socket.
       sendReceiveSocket.close();
+   }
+   
+   /**
+    * 
+    */
+   public static void enterDetails () {
+	   Scanner sc = new Scanner (System.in);
+	   //user toggle verbose or quiets mode
+	   String input = " ";
+	   
+	   while (!(input.equals("1") || input.equals("2") || input.equals(""))){
+		   System.out.println("\nEnter '1' to run in normal mode or '2' for test mode ");
+		   System.out.print("or nothing to stay in " + (normalMode ? "normal" : "test") + " mode: ");
+		   input = sc.nextLine();
+
+		   if (input.equals("1")) normalMode = true;
+		   if (input.equals("2")) normalMode = false;
+	   }
+	   
+	   input = " ";
+	   while (!(input.equals("1") || input.equals(""))){
+		   System.out.println("\nEnter '1' to toggle between quiet and verbose mode ");
+		   System.out.print("or nothing to stay in " + (verboseMode ? "verbose" : "quiet") + " mode: ");
+		   input = sc.nextLine();
+
+		   if (input.equals("1")) {
+			   verboseMode = verboseMode ? false : true;
+		   }
+	   }
+	   
+	   input = "";
+	   while (input.equals("")){
+		   System.out.println("\nEnter the IP address of server or nothing to keep IP address unchanged: ");
+		   input = sc.nextLine();
+		   
+		   if (input.equals("")) {
+			   if (ipAddress.equals("")) {
+				   System.out.print("IP has not been entered yet!");
+			   }else {
+				   input="entered";
+			   }
+		   } else {
+			   ipAddress = input;
+		   }
+	   }
+	   
+	   input = "";
+	   while (input.equals("")){
+		   System.out.println("\nEnter the client of directory or nothing to keep the directory unchanged: ");
+		   input = sc.nextLine();
+		   
+		   if (input.equals("")) {
+			   if (clientDirectory.equals("")) {
+				   System.out.print("Client directory has not been entered yet!");
+			   } else {
+				   input="entered";
+			   }
+		   } else {
+			   clientDirectory = input;
+		   }
+	   }
+	   
+	   input = "";
+	   while (input.equals("")){
+		   System.out.println("\nEnter the server of directory or nothing to keep the directory unchanged: ");
+		   input = sc.nextLine();
+		   
+		   if (input.equals("")) {
+			   if (serverDirectory.equals("")) {
+				   System.out.print("Server directory has not been entered yet!");
+			   } else {
+				   input="entered";
+			   }
+		   } else {
+			   serverDirectory = input;
+		   }
+	   }
+	   System.out.println("Configerations are now set up.");
    }
 
    public static void main(String args[])
    {
       TFTPClient c = new TFTPClient();
+      System.out.println("Welcome to the TFTP client application");
+      enterDetails ();
       c.sendAndReceive();
    }
 }
