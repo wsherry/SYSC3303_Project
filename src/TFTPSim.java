@@ -15,7 +15,8 @@ public class TFTPSim {
    // UDP datagram packets and sockets used to send / receive
    private DatagramPacket sendPacket, receivePacket;
    private DatagramSocket receiveSocket, sendSocket, sendReceiveSocket;
-   private boolean verboseMode = false; //false for quiet and true for verbose
+   //CURRENTLY HARD CODED
+   private boolean verboseMode = true; //false for quiet and true for verbose
    
    public TFTPSim()
    {

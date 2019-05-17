@@ -44,30 +44,29 @@ public class TFTPClient {
 	   
 	   byte readWrite = (byte) 1; //default value for initialization
 	   
+	   //After a request has been completed the user gets prompted
+	   //to enter the configuration "menu" again
+       //TO BE IMPLEMENTED AFTER FILE TRANSFER IMPLEMENTATION IS COMPLETED
 	   if (fisnishedRequest) { //fisnishedRequest should be true after a file has been fully read or written
 		   System.out.println("Enter 1 to change configerations or nothing to leave configs unchanged: ");
 		   while (!(input.equals("1") || input.equals(""))){
 			   input = sc.nextLine();
-			   if (input.equals("1")) {
-				   configClient();
-			   }
+			   if (input.equals("1")) configClient();
 		   }
-		   fisnishedRequest = false;
+		   fisnishedRequest = false; //set fisnishedRequest to false so the user only gets prompt after a request finishes
 	   }
-		   
+	   
+	   //User chooses read or write request
 	   while (!(input.equals("1") || input.equals("2"))){
 		   System.out.println("\nEnter '1' for read or '2' write request: ");
 		   input = sc.nextLine();
 
-		   if (input.equals("1")) {
-			   readWrite = (byte) 1;
-		   } else if (input.equals("2")) {
-			   readWrite = (byte) 2;
-		   } else {
-			   System.out.print(input + " is not 1 or 2.\n");
-		   }
+		   if (input.equals("1")) readWrite = (byte) 1;
+		   else if (input.equals("2")) readWrite = (byte) 2;
+		   else System.out.print(input + " is not 1 or 2.\n");
 	   }
 	   
+	   //INCOMPLETED, need to implement error detection for checking if file exists
 	   input = " ";
 	   String fileName = "";
 	   //while (found){ //keep asking for file until valid file is found in directory
@@ -146,8 +145,10 @@ public class TFTPClient {
         //     address of the local host.
         //  69 - the destination port number on the destination host.
         try {
-           sendPacket = new DatagramPacket(msg, len,
-                               InetAddress.getLocalHost(), sendPort);
+           /*sendPacket = new DatagramPacket(msg, len,
+                               InetAddress.getLocalHost(), sendPort);*/
+        	sendPacket = new DatagramPacket(msg, len,
+        			InetAddress.getByName(ipAddress), sendPort);
         } catch (UnknownHostException e) {
            e.printStackTrace();
            System.exit(1);
@@ -219,48 +220,46 @@ public class TFTPClient {
    }
    
    /**
-    * 
+    * "Menu" for configuring the settings of client application
     */
    public static void configClient () {
-	   Scanner sc = new Scanner (System.in);
-	   //user toggle verbose or quiets mode
+	   Scanner sc = new Scanner (System.in); //scanner for getting user's input
 	   String input = " ";
 	   
-	   while (!(input.equals("1") || input.equals("2") || input.equals(""))){
+	   //option to set normal or test mode
+	   while (!(input.equals("1") || input.equals("2") || input.equals(""))){ //loops until valid input (1, 2 or nothing)
 		   System.out.println("\nEnter '1' to run in normal mode or '2' for test mode ");
 		   System.out.print("or nothing to stay in " + (run == Mode.NORMAL ? "normal" : "test") + " mode: ");
 		   input = sc.nextLine();
-		   // change to NORMAL to send directly to server
+		   //setting the mode accordingly
 		   if (input.equals("1")) run = Mode.NORMAL;
 		   if (input.equals("2")) run = Mode.TEST;
 	   }
 	   System.out.println("Running in " + (run == Mode.NORMAL ? "normal" : "test") + " mode");
 
 	   input = " ";
-	   while (!(input.equals("1") || input.equals(""))){
+	   //option to toggle verbose or quiets mode
+	   while (!(input.equals("1") || input.equals(""))){ //loops until valid input (1 or nothing)
 		   System.out.println("\nEnter '1' to toggle between quiet and verbose mode ");
 		   System.out.print("or nothing to stay in " + (verboseMode ? "verbose" : "quiet") + " mode: ");
 		   input = sc.nextLine();
-
-		   if (input.equals("1")) {
-			   verboseMode = verboseMode ? false : true;
-		   }
+		   //toggling verboseMode
+		   if (input.equals("1"))  verboseMode = verboseMode ? false : true;
 	   }
 	   System.out.println("Running in " + (verboseMode ? "verbose" : "quiet") + " mode");
 
-	   
-	   input = "";
+	   input = ""; //reset input
 	   System.out.println("\nCurrent IP is: " + (ipAddress.equals("") ? "undefined" : ipAddress));
+	   //option to set the IP address.
+	   //User must input IP address at the first launch.
+	   //Once an IP has been set, the user can enter nothing to keep it unchanged.
 	   while (input.equals("")){
 		   System.out.println("Enter the IP address of server or nothing to keep IP address unchanged: ");
 		   input = sc.nextLine();
 		   
 		   if (input.equals("")) {
-			   if (ipAddress.equals("")) {
-				   System.out.println("An IP has not been entered yet!");
-			   }else {
-				   input="entered";
-			   }
+			   if (ipAddress.equals("")) System.out.println("An IP has not been entered yet!");
+			   else input="entered"; //set input to arbitrary string to leave loop
 		   } else {
 			   ipAddress = input;
 			   System.out.println("IP address is now: " + ipAddress);
@@ -269,16 +268,16 @@ public class TFTPClient {
 	   
 	   input = "";
 	   System.out.println("\nCurrent client directory is: " + (clientDirectory.equals("") ? "undefined" : clientDirectory));
+	   //option to set the file directory.
+	   //User must input file directory at the first launch.
+	   //Once an file directory has been set, the user can enter nothing to keep it unchanged.
 	   while (input.equals("")){
 		   System.out.println("Enter the client of directory or nothing to keep the directory unchanged: ");
 		   input = sc.nextLine();
 		   
 		   if (input.equals("")) {
-			   if (clientDirectory.equals("")) {
-				   System.out.println("A client directory has not been entered yet!");
-			   } else {
-				   input="entered";
-			   }
+			   if (clientDirectory.equals("")) System.out.println("A client directory has not been entered yet!");
+			   else input="entered"; //set input to arbitrary string to leave loop
 		   } else {
 			   clientDirectory = input;
 			   System.out.println("Client directory is now: " + clientDirectory);
