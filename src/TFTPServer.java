@@ -6,12 +6,16 @@
 
 import java.io.*;
 import java.net.*;
+import java.util.Scanner;
 
 
 public class TFTPServer {
    // UDP datagram packets and sockets used to send / receive
    private DatagramPacket receivePacket;
    private DatagramSocket receiveSocket;
+   private static boolean verboseMode = false; //false for quiet and true for verbose
+   private static String serverDirectory = "";
+   private static boolean fisnishedRequest = false;
    
    public TFTPServer()
    {
@@ -30,17 +34,33 @@ public class TFTPServer {
    {
       byte[] data = new byte[4];     
       Request req; // READ, WRITE or ERROR
-      
+	  Scanner sc = new Scanner (System.in);
+	  String input = "";
+	   
       int len, j=0, k=0;
 
       for(;;) { // loop forever
+    	  input = "";
+    	  //After a request has been completed the user gets prompted
+    	  //to enter the configuration "menu" again
+    	  //TO BE IMPLEMENTED AFTER FILE TRANSFER IMPLEMENTATION IS COMPLETED
+    	  if (fisnishedRequest) { //fisnishedRequest should be true after a file has been fully read or written
+    		  System.out.println("Enter 1 to change configerations or nothing to leave configs unchanged: ");
+    		  while (!(input.equals("1") || input.equals(""))){
+    			  input = sc.nextLine();
+    			  if (input.equals("1")) configServer();
+    		  }
+    		  fisnishedRequest = false; //set fisnishedRequest to false so the user only gets prompt after a request finishes
+    	  }
+    	  
          // Construct a DatagramPacket for receiving packets up
          // to 100 bytes long (the length of the byte array).
          
          data = new byte[100];
          receivePacket = new DatagramPacket(data, data.length);
 
-         System.out.println("Server: Waiting for packet.");
+         System.out.println("------------------------------------------------------");
+         System.out.println("Server (" + InetAddress.getLocalHost().getHostAddress() + ") : Waiting for packet.");
          // Block until a datagram packet is received from receiveSocket.
          try {
             receiveSocket.receive(receivePacket);
@@ -50,12 +70,17 @@ public class TFTPServer {
          }
 
          // Process the received datagram.
-         System.out.println("Server: Packet received:");
-         System.out.println("From host: " + receivePacket.getAddress());
-         System.out.println("Host port: " + receivePacket.getPort());
          len = receivePacket.getLength();
-         System.out.println("Length: " + len);
-         System.out.println("Containing: " );
+         if (verboseMode) {
+        	 System.out.println("Server: Packet received:");
+        	 System.out.println("From host: " + receivePacket.getAddress());
+        	 System.out.println("Host port: " + receivePacket.getPort());
+        	 System.out.println("Length: " + len);
+        	 System.out.println("Containing: " );        	 
+         } else {
+             System.out.println("Server: Packet received.");
+         }
+         
          
          // print the bytes
          for (j=0;j<len;j++) {
@@ -101,14 +126,54 @@ public class TFTPServer {
          }
 
       	 // Create a new client connection thread for each connection with the client.
-         Runnable newClient = new TFTPClientConnectionThread(req, receivePacket);
+         Runnable newClient = new TFTPClientConnectionThread(req, receivePacket, verboseMode);
          new Thread(newClient).start();
       } // end of loop
+   }
+   
+   /**
+    * "Menu" for configuring the settings of client application
+    */
+   public static void configServer () {
+	   Scanner sc = new Scanner (System.in); //scanner for getting user's input
+	   String input = " ";
+	   
+	   //option to toggle verbose or quiets mode
+	   while (!(input.equals("1") || input.equals(""))){ //loops until valid input (1 or nothing)
+		   System.out.println("\nEnter '1' to toggle between quiet and verbose mode ");
+		   System.out.print("or nothing to stay in " + (verboseMode ? "verbose" : "quiet") + " mode: ");
+		   input = sc.nextLine();
+		   //toggling verboseMode
+		   if (input.equals("1")) verboseMode = verboseMode ? false : true;
+	   }
+	   System.out.println("Running in " + (verboseMode ? "verbose" : "quiet") + " mode");
+
+	   input = "";
+	   System.out.println("\nCurrent server directory is: " + (serverDirectory.equals("") ? "undefined" : serverDirectory));
+	   //option to set the file directory.
+	   //User must input file directory at the first launch.
+	   //Once an file directory has been set, the user can enter nothing to keep it unchanged.
+	   while (input.equals("")){
+		   System.out.println("Enter the server of directory or nothing to keep the directory unchanged: ");
+		   input = sc.nextLine();
+		   
+		   if (input.equals("")) {
+			   if (serverDirectory.equals("")) System.out.println("Server directory has not been entered yet!");
+			   else input="entered"; //set input to arbitrary string to leave loop
+		   } else {
+			   serverDirectory = input;
+			   System.out.println("Server directory is now: " + serverDirectory);
+		   }
+	   }
+	   
+	   System.out.println("\n------------------------------------------------------\nConfigerations are now set up.");
    }
 
    public static void main( String args[] ) throws Exception
    {
       TFTPServer s = new TFTPServer();
+      System.out.println("Welcome to the TFTP server application");
+      configServer ();
       s.receiveAndSendTFTP();
    }
 }

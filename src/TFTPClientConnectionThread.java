@@ -6,6 +6,8 @@ public class TFTPClientConnectionThread implements Runnable {
 	private DatagramSocket sendSocket;
 	private DatagramPacket receivePacket;
 	private DatagramPacket sendPacket;
+	private boolean verboseMode = false; //false for quiet and true for verbose
+
 	
 	private Request request;
 	// responses for valid requests
@@ -14,7 +16,7 @@ public class TFTPClientConnectionThread implements Runnable {
 	
 	String fileNameToWrite;
 
-	public TFTPClientConnectionThread(Request request, DatagramPacket receivePacket) {
+	public TFTPClientConnectionThread(Request request, DatagramPacket receivePacket, boolean verboseMode) {
 		try {
 			sendSocket = new DatagramSocket();
 		} catch (SocketException se) {
@@ -24,6 +26,7 @@ public class TFTPClientConnectionThread implements Runnable {
 
 		this.receivePacket = receivePacket;
 		this.request = request;
+		this.verboseMode = verboseMode;
 	}
 
 	public void run() {
@@ -41,15 +44,19 @@ public class TFTPClientConnectionThread implements Runnable {
 	private void send(byte[] response) {
         sendPacket = new DatagramPacket(response, response.length,
                               receivePacket.getAddress(), receivePacket.getPort());
-
-        System.out.println("TFTPClientConnectionThread: Sending packet:");
-        System.out.println("To host: " + sendPacket.getAddress());
-        System.out.println("Destination host port: " + sendPacket.getPort());
+        
         int len = sendPacket.getLength();
-        System.out.println("Length: " + len);
-        System.out.println("Containing: ");
-        for (int j=0; j<len; j++) {
-           System.out.println("byte " + j + " " + response[j]);
+        if (verboseMode) {
+        	System.out.println("TFTPClientConnectionThread: Sending packet:");
+        	System.out.println("To host: " + sendPacket.getAddress());
+        	System.out.println("Destination host port: " + sendPacket.getPort());
+        	System.out.println("Length: " + len);
+        	System.out.println("Containing: ");
+        	for (int j=0; j<len; j++) {
+        		System.out.println("byte " + j + " " + response[j]);
+        	}
+        } else {
+            System.out.println("Server: Packet sent.");
         }
 
         // Send the datagram packet to the client via a new socket.
