@@ -115,12 +115,12 @@ public class TFTPClientConnectionThread implements Runnable {
 	         // Create a response.
 	         if (request == Request.READ) { 
 	        	 //create new thread for sending data
-	        	 Runnable readReqThread = new TFTPtestThread(request, receivePacket, verboseMode);
+	        	 Runnable readReqThread = new TFTPsendThread(request, receivePacket, verboseMode);
 	             new Thread(readReqThread).start();
 	             
 	         } else if (request == Request.WRITE) {
 	        	 //create new thread for sending data
-	        	 Runnable writeReqThread = new TFTPtestThread(request, receivePacket, verboseMode);
+	        	 Runnable writeReqThread = new TFTPsendThread(request, receivePacket, verboseMode);
 	             new Thread(writeReqThread).start();
 	         }
 	         
@@ -136,7 +136,7 @@ public class TFTPClientConnectionThread implements Runnable {
 		} // end of loop
 	}
 	
-	public class TFTPtestThread implements Runnable {
+	public class TFTPsendThread implements Runnable {
 
 		private DatagramSocket sendSocket;
 		private DatagramPacket receivePacket;
@@ -148,7 +148,7 @@ public class TFTPClientConnectionThread implements Runnable {
 		// responses for valid requests
 		String fileNameToWrite;
 
-		public TFTPtestThread(Request request, DatagramPacket receivePacket, boolean verboseMode) {
+		public TFTPsendThread(Request request, DatagramPacket receivePacket, boolean verboseMode) {
 			try {
 				sendSocket = new DatagramSocket();
 			} catch (SocketException se) {
