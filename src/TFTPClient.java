@@ -15,7 +15,7 @@ public class TFTPClient {
    private static boolean verboseMode = false; //false for quiet and true for verbose
    private static String ipAddress = "";
    private static String clientDirectory = "";
-   private static boolean fisnishedRequest = false;
+   private static boolean finishedRequest = false;
    private boolean running = true;
    
    // we can run in normal (send directly to server) or test
@@ -49,13 +49,13 @@ public class TFTPClient {
 		   //After a request has been completed the user gets prompted
 		   //to enter the configuration "menu" again
 	       //TO BE IMPLEMENTED AFTER FILE TRANSFER IMPLEMENTATION IS COMPLETED
-		   if (fisnishedRequest) { //fisnishedRequest should be true after a file has been fully read or written
+		   if (finishedRequest) { //finishedRequest should be true after a file has been fully read or written
 			   System.out.println("Enter 1 to change configerations or nothing to leave configs unchanged: ");
 			   while (!(input.equals("1") || input.equals(""))){
 				   input = sc.nextLine();
 				   if (input.equals("1")) configClient();
 			   }
-			   fisnishedRequest = false; //set fisnishedRequest to false so the user only gets prompt after a request finishes
+			   finishedRequest = false; //set finishedRequest to false so the user only gets prompt after a request finishes
 		   }
 		   
 		   //NOT CORRECTLY IMPLEMENTED YET.
