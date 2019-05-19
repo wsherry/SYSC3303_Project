@@ -37,11 +37,11 @@ Server.java
 
 Client.java 
 
-intermdiateHost.java
+TFTPSim.java
 
 
 Installation/setup instructions:
-1) run server.java as java application
-2) run intermediateHost.java as java application
-3) run client.java as java application
+1) Run server.java as java application and follow the command line prompts. Copy the displayed address after configuration is complete.
+2) Run TFTPSim.java as java application. *Not necessary if only running in normal mode.
+3) Run client.java as java application and follow the command line prompts. When prompted for the IP adress, paste the IP adress that was copied from the server.
 ** run in the above order
