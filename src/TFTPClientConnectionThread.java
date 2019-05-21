@@ -1,5 +1,8 @@
 import java.io.*;
 import java.net.*;
+import java.util.Arrays;
+
+//import TFTPClient.RequestType;
 
 
 public class TFTPClientConnectionThread implements Runnable {
@@ -13,7 +16,7 @@ public class TFTPClientConnectionThread implements Runnable {
 	public static final byte[] readResp = {0, 3, 0, 1};
 	public static final byte[] writeResp = {0, 4, 0, 0};
 	
-	String fileNameToWrite;
+	String fileName;
 
 	public TFTPClientConnectionThread(boolean verboseMode) {
 		try {
@@ -81,6 +84,13 @@ public class TFTPClientConnectionThread implements Runnable {
 	         
 	         // Form a String from the byte array.
 	         String received = new String(data,0,len);
+	         //String fName = new String(data,2,received.lastIndexOf("o"));
+	         //fileName = "C:\\Users\\Sherry Wang\\Documents\\GitHub\\SYSC3303_Project\\src\\" + fName;
+	         System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!");
+
+	         System.out.println(fileName);
+
+	         
 	         System.out.println(received);
 
 	         // If it's a read, send back DATA (03) block 1
@@ -112,6 +122,15 @@ public class TFTPClientConnectionThread implements Runnable {
 	         
 	         if(k!=len-1) request=Request.ERROR; // other stuff at end of packet        
 
+	         if (request == Request.ERROR) { // it was invalid, close socket on port 69 (so things work properly next time) and quit
+		            receiveSocket.close();
+		            try {
+						throw new Exception("Not yet implemented");
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+		         }
 	         // Create a response.
 	         if (request == Request.READ) { 
 	        	 //create new thread for sending data
@@ -124,7 +143,7 @@ public class TFTPClientConnectionThread implements Runnable {
 	             new Thread(writeReqThread).start();
 	         }
 	         
-	         if (request == Request.ERROR) { // it was invalid, close socket on port 69 (so things work properly next time) and quit
+/*	         if (request == Request.ERROR) { // it was invalid, close socket on port 69 (so things work properly next time) and quit
 	            receiveSocket.close();
 	            try {
 					throw new Exception("Not yet implemented");
@@ -132,7 +151,7 @@ public class TFTPClientConnectionThread implements Runnable {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-	         }
+	         }*/
 		} // end of loop
 	}
 	
@@ -159,6 +178,9 @@ public class TFTPClientConnectionThread implements Runnable {
 			this.receivePacket = receivePacket;
 			this.request = request;
 			this.verboseMode = verboseMode;
+			
+			
+			
 		}
 
 		public void run() {
@@ -212,9 +234,104 @@ public class TFTPClientConnectionThread implements Runnable {
 
 			System.out.println("TFTPClientConnectionThread: packet sent using port " + sendSocket.getLocalPort());
 			System.out.println();
+			
+			boolean ackVerified;
+			if (request == Request.READ) {
+				transferFiles(fileName, sendSocket.getLocalPort());
+			} else if (request == Request.WRITE){
+				receiveFiles(fileNameToWrite, sendSocket.getLocalPort());
+			}
+
 
 			// We're finished with this socket, so close it.
 			sendSocket.close();		
 		}
+		
+		public void receiveFiles(String fileName, int sendPort) {
+
+			byte[] data = new byte[516];
+			int len = 516;
+			receivePacket = new DatagramPacket(data, data.length);
+
+			while (true) {
+			System.out.println("Server: Waiting for data packet.");
+
+				try {
+					// Block until a datagram is received via sendReceiveSocket.
+					receiveSocket.receive(receivePacket);
+				} catch (IOException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+
+				// Process the received datagram.
+				len = receivePacket.getLength();
+
+				System.out.println("Server: Data Packet received.");
+
+				if (verboseMode) {
+					System.out.println("From host: " + receivePacket.getAddress());
+					System.out.println("Host port: " + receivePacket.getPort());
+					System.out.println("Length: " + len);
+					System.out.println("Containing: ");
+					for (int j = 0; j < len; j++) {
+						System.out.println("byte " + j + " " + data[j]);
+					}
+				}
+				if (len < 516) System.out.println("Received all data packets");
+			}
+			}
+
+		public void transferFiles(String filename, int sendPort) {
+		   int block_num = 0;
+		   byte[] msg = new byte[516];
+		   byte[] data = new byte[100];
+	       receivePacket = new DatagramPacket(data, data.length);
+		   msg[0] = 0;
+		   msg[1] = 3;
+		   msg[2] = (byte) block_num;
+		   byte[] dataBuffer = new byte[512];
+		   try {
+			   BufferedInputStream bis = new BufferedInputStream(new FileInputStream(filename));   
+
+			   while(bis.read(dataBuffer) != -1) {
+				   sendPacket = new DatagramPacket(dataBuffer, dataBuffer.length);
+				   try {
+			           sendSocket.send(sendPacket);
+			        } catch (IOException e) {
+			           e.printStackTrace();
+			           System.exit(1);
+			        }
+				   try {
+			           // Block until a datagram is received via sendReceiveSocket.
+			           receiveSocket.receive(receivePacket);
+			        } catch(IOException e) {
+			           e.printStackTrace();
+			           System.exit(1);
+			        }
+				   int len = receivePacket.getLength();
+					if (verboseMode) {
+						System.out.println("Client: Packet received:");
+						System.out.println("From host: " + receivePacket.getAddress());
+						System.out.println("Host port: " + receivePacket.getPort());
+						System.out.println("Length: " + len);
+						System.out.println("Containing: ");
+						for (int j = 0; j < len; j++) {
+							System.out.println("byte " + j + " " + data[j]);
+						}
+					} else {
+						System.out.println("Server: Packet received.");
+					}
+					
+		           //byte[] ack = new byte[] {0,4,0,0};
+		           //sboolean verified = Arrays.equals(ack, data);
+			   }
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+	   }
+
 	}
 }
+
