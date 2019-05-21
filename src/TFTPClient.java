@@ -13,8 +13,12 @@ public class TFTPClient {
 	private DatagramPacket sendPacket, receivePacket;
 	private DatagramSocket sendReceiveSocket;
 	private static boolean verboseMode = false; // false for quiet and true for verbose
-	private static String ipAddress = "";
-	private static String clientDirectory = "";
+	//TODO: uncomment
+	//private static String ipAddress = "";
+	private static String ipAddress = "192.168.0.21";
+	//TODO: uncomment
+	//private static String clientDirectory = "";
+	private static String clientDirectory = "C:\\Users\\Sherry Wang\\Documents\\GitHub\\SYSC3303_Project\\src";
 	private static boolean finishedRequest = false;
 	private boolean running = true;
 
@@ -281,24 +285,41 @@ public class TFTPClient {
 					System.out.println("byte " + j + " " + data[j]);
 				}
 			}
+			
+			byte[] ack = new byte[] {0,4,0,0};
+	        
+	        	 try {
+					sendPacket = new DatagramPacket(ack, ack.length, InetAddress.getByName(ipAddress), sendPort);
+				} catch (UnknownHostException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				   try {
+			           sendReceiveSocket.send(sendPacket);
+			        } catch (IOException e) {
+			           e.printStackTrace();
+			           System.exit(1);
+			        }
+	        
 		}
 	}
 
 	public void transferFiles(String filename, int sendPort) {
 	   int blockNum = 0;
-	   byte[] msg = new byte[516];
 	   byte[] data = new byte[100];
        receivePacket = new DatagramPacket(data, data.length);
-	   msg[0] = 0;
-	   msg[1] = 3;
 	   byte[] dataBuffer = new byte[512];
 	   try {
 		   BufferedInputStream bis = new BufferedInputStream(new FileInputStream(filename));   
 
-		   while(bis.read(dataBuffer) != -1) {
+		   int bytesRead = 0;
+		   while((bytesRead = bis.read(dataBuffer, 0, 512)) != -1) {
+			   byte[] msg = new byte[bytesRead + 3];
+			   msg[0] = 0;
+			   msg[1] = 3;
 			   msg[2] = (byte) blockNum;
-			   System.arraycopy(dataBuffer, 0, msg, 2, dataBuffer.length);
-
+			   
+			   System.arraycopy(dataBuffer, 0, msg, 3, bytesRead);
 			   sendPacket = new DatagramPacket(msg, msg.length, InetAddress.getByName(ipAddress), sendPort);
 			   try {
 		           sendReceiveSocket.send(sendPacket);
@@ -335,6 +356,7 @@ public class TFTPClient {
 	           //byte[] ack = new byte[] {0,4,0,0};
 	           //sboolean verified = Arrays.equals(ack, data);
 		   }
+		   bis.close();
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -389,7 +411,8 @@ public class TFTPClient {
 				else
 					input = "entered"; // set input to arbitrary string to leave loop
 			} else {
-				ipAddress = input;
+				//TODO: uncomment
+				//ipAddress = input;
 				System.out.println("IP address is now: " + ipAddress);
 			}
 		}
@@ -411,7 +434,8 @@ public class TFTPClient {
 				else
 					input = "entered"; // set input to arbitrary string to leave loop
 			} else {
-				clientDirectory = input;
+				//TODO: uncomment
+				//clientDirectory = input;
 				System.out.println("Client directory is now: " + clientDirectory);
 			}
 		}

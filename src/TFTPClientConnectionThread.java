@@ -89,16 +89,8 @@ public class TFTPClientConnectionThread implements Runnable {
 	         
 	         // Form a String from the byte array.
 	         String received = new String(data,0,len);
-	         System.out.println(received);
-
-	         received = new String(receivePacket.getData(), 0, receivePacket.getLength());
-	         System.out.println(received);
-
-			 fileName = received.split("\0")[1].substring(1);
-	         System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!");
-	         
+			 fileName = received.split("\0")[1].substring(1);	         
 	         System.out.println(fileName);
-	         System.out.println(received);
 
 	         // If it's a read, send back DATA (03) block 1
 	         // If it's a write, send back ACK (04) block 0
@@ -221,7 +213,6 @@ public class TFTPClientConnectionThread implements Runnable {
 			}
 
 			// Send the datagram packet to the client via a new socket.
-
 			try {
 				// Construct a new datagram socket and bind it to any port
 				// on the local host machine. This socket will be used to
@@ -313,25 +304,41 @@ public class TFTPClientConnectionThread implements Runnable {
 		//read files
 		public void transferFiles(String filename, int sendPort) {
 		   int blockNum = 0;
-		   byte[] msg = new byte[516];
 		   byte[] data = new byte[100];
 	       receivePacket = new DatagramPacket(data, data.length);
-		   msg[0] = 0;
-		   msg[1] = 3;
-		   byte[] dataBuffer = new byte[516];
+		   byte[] dataBuffer = new byte[512];
 		   try {
-			   BufferedInputStream bis = new BufferedInputStream(new FileInputStream(SERVERDIRECTORY + "\\"+ fileName));   
-
-			   while(bis.read(dataBuffer) != -1) {
+			   BufferedInputStream bis = new BufferedInputStream(new FileInputStream(SERVERDIRECTORY + "\\"+ filename));   
+			   System.out.println(SERVERDIRECTORY + "\\"+ filename);
+			   System.out.println("Within Transfer files (for reading) server");
+			   System.out.println(bis.read(dataBuffer));
+			   int bytesRead = 0;
+			   while((bytesRead = bis.read(dataBuffer, 0, 512)) != -1) {
+				   byte[] msg = new byte[bytesRead + 3];
+				   msg[0] = 0;
+				   msg[1] = 3;
 				   msg[2] = (byte) blockNum;
-				   System.arraycopy(dataBuffer, 0, msg, 2, dataBuffer.length);
-				   sendPacket = new DatagramPacket(msg, msg.length);
+				   System.arraycopy(dataBuffer, 0, msg, 3, bytesRead);
+				   sendPacket = new DatagramPacket(msg, msg.length, sendPacket.getAddress(), sendPort);
 				   try {
 			           sendSocket.send(sendPacket);
 			        } catch (IOException e) {
 			           e.printStackTrace();
 			           System.exit(1);
 			        }
+				   
+				   if (verboseMode) {
+						System.out.println("Server: Packet sent:");
+						System.out.println("From host: " + receivePacket.getAddress());
+						System.out.println("Host port: " + receivePacket.getPort());
+						System.out.println("Length: " + sendPacket.getLength());
+						System.out.println("Containing: ");
+						for (int j = 0; j < sendPacket.getLength(); j++) {
+							System.out.println("byte " + j + " " + data[j]);
+						}
+					} else {
+						System.out.println("Server: Packet received.");
+					}
 				   try {
 			           // Block until a datagram is received via sendReceiveSocket.
 			           receiveSocket.receive(receivePacket);
@@ -359,15 +366,13 @@ public class TFTPClientConnectionThread implements Runnable {
 					blockNum++;
 					
 			   }
+			   bis.close();
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 			}
 	   }
 		
-		
-		
-
 	}
 }
 
