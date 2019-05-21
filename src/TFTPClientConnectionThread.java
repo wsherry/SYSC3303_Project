@@ -89,8 +89,12 @@ public class TFTPClientConnectionThread implements Runnable {
 	         
 	         // Form a String from the byte array.
 	         String received = new String(data,0,len);
-	         fileName = new String(receivePacket.getData(), 0, receivePacket.getLength());
-			 fileName = fileName.split("\0")[1].substring(1);
+	         System.out.println(received);
+
+	         received = new String(receivePacket.getData(), 0, receivePacket.getLength());
+	         System.out.println(received);
+
+			 fileName = received.split("\0")[1].substring(1);
 	         System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!");
 	         
 	         System.out.println(fileName);
@@ -139,11 +143,13 @@ public class TFTPClientConnectionThread implements Runnable {
 	        	 //create new thread for sending data
 	        	 Runnable readReqThread = new TFTPsendThread(request, receivePacket, verboseMode);
 	             new Thread(readReqThread).start();
+	             break;
 	             
 	         } else if (request == Request.WRITE) {
 	        	 //create new thread for sending data
 	        	 Runnable writeReqThread = new TFTPsendThread(request, receivePacket, verboseMode);
 	             new Thread(writeReqThread).start();
+	             break;
 	         }
 	         
 /*	         if (request == Request.ERROR) { // it was invalid, close socket on port 69 (so things work properly next time) and quit
@@ -251,15 +257,19 @@ public class TFTPClientConnectionThread implements Runnable {
 		public void receiveFiles(String fileName, int sendPort) {
 
 			byte[] data = new byte[516];
-			int len = 516;
 			receivePacket = new DatagramPacket(data, data.length);
-			
+			int len = receivePacket.getLength();
 			BufferedOutputStream out;
 			try {
 				out = new BufferedOutputStream(new FileOutputStream(SERVERDIRECTORY + "\\"+ fileName));
 				while (true) {
+					
+					if (len < 516) {
+						System.out.println("Received all data packets");
+						break;
+					}
 					System.out.println("Server: Waiting for data packet.");
-
+						
 						try {
 							// Block until a datagram is received via sendReceiveSocket.
 							receiveSocket.receive(receivePacket);
@@ -291,8 +301,6 @@ public class TFTPClientConnectionThread implements Runnable {
 							e.printStackTrace();
 						}
 
-						
-						if (len < 516) System.out.println("Received all data packets");
 					}
 			} catch (FileNotFoundException e1) {
 				// TODO Auto-generated catch block
