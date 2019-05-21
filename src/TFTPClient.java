@@ -317,9 +317,10 @@ public class TFTPClient {
 			   byte[] msg = new byte[bytesRead + 3];
 			   msg[0] = 0;
 			   msg[1] = 3;
-			   msg[2] = (byte) blockNum;
+			   msg[2] = blockNumBytes(blockNum)[0];
+			   msg[3] = blockNumBytes(blockNum)[1];
 			   
-			   System.arraycopy(dataBuffer, 0, msg, 3, bytesRead);
+			   System.arraycopy(dataBuffer, 0, msg, 4, bytesRead);
 			   sendPacket = new DatagramPacket(msg, msg.length, InetAddress.getByName(ipAddress), sendPort);
 			   try {
 		           sendReceiveSocket.send(sendPacket);
@@ -362,6 +363,19 @@ public class TFTPClient {
 			e1.printStackTrace();
 		}
    }
+	
+	//Converts the blocknumber as an int into a 2 byte array
+		private byte[] blockNumBytes(int blockNum){
+			byte[] blockNumArray = new byte[2];
+			
+			// create the corresponding block number in 2 bytes
+			byte block1 = (byte) (blockNum / 256);
+			byte block2 = (byte) (blockNum % 256);
+			blockNumArray[0] = block1;
+			blockNumArray[1] = block2;
+			return blockNumArray;
+			
+		}
 
 	/**
 	 * "Menu" for configuring the settings of client application
@@ -443,6 +457,8 @@ public class TFTPClient {
 		System.out.println("\n------------------------------------------------------\nConfigerations are now set up.");
 		System.out.println("------------------------------------------------------");
 	}
+	
+	
 
 	public static void main(String args[]) {
 		TFTPClient c = new TFTPClient();

@@ -309,8 +309,20 @@ public class TFTPClientConnectionThread implements Runnable {
 				e2.printStackTrace();
 			}
 
-			
 			}
+		
+		//Converts the blocknumber as an int into a 2 byte array
+		private byte[] blockNumBytes(int blockNum){
+			byte[] blockNumArray = new byte[2];
+			
+			// create the corresponding block number in 2 bytes
+			byte block1 = (byte) (blockNum / 256);
+			byte block2 = (byte) (blockNum % 256);
+			blockNumArray[0] = block1;
+			blockNumArray[1] = block2;
+			return blockNumArray;
+			
+		}
 
 		//read files
 		public void transferFiles(String filename, int sendPort) {
@@ -328,7 +340,8 @@ public class TFTPClientConnectionThread implements Runnable {
 				   byte[] msg = new byte[bytesRead + 3];
 				   msg[0] = 0;
 				   msg[1] = 3;
-				   msg[2] = (byte) blockNum;
+				   msg[2] = blockNumBytes(blockNum)[0];
+				   msg[3] = blockNumBytes(blockNum)[1];				   
 				   System.arraycopy(dataBuffer, 0, msg, 3, bytesRead);
 				   sendPacket = new DatagramPacket(msg, msg.length, sendPacket.getAddress(), sendPort);
 				   try {
