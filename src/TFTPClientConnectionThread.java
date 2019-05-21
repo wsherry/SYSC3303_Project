@@ -337,12 +337,12 @@ public class TFTPClientConnectionThread implements Runnable {
 			   System.out.println(bis.read(dataBuffer));
 			   int bytesRead = 0;
 			   while((bytesRead = bis.read(dataBuffer, 0, 512)) != -1) {
-				   byte[] msg = new byte[bytesRead + 3];
+				   byte[] msg = new byte[bytesRead + 4];
 				   msg[0] = 0;
 				   msg[1] = 3;
 				   msg[2] = blockNumBytes(blockNum)[0];
 				   msg[3] = blockNumBytes(blockNum)[1];				   
-				   System.arraycopy(dataBuffer, 0, msg, 3, bytesRead);
+				   System.arraycopy(dataBuffer, 0, msg, 4, bytesRead);
 				   sendPacket = new DatagramPacket(msg, msg.length, sendPacket.getAddress(), sendPort);
 				   try {
 			           sendSocket.send(sendPacket);

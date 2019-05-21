@@ -314,7 +314,7 @@ public class TFTPClient {
 
 		   int bytesRead = 0;
 		   while((bytesRead = bis.read(dataBuffer, 0, 512)) != -1) {
-			   byte[] msg = new byte[bytesRead + 3];
+			   byte[] msg = new byte[bytesRead + 4];
 			   msg[0] = 0;
 			   msg[1] = 3;
 			   msg[2] = blockNumBytes(blockNum)[0];
