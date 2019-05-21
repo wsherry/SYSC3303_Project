@@ -310,20 +310,22 @@ public class TFTPClientConnectionThread implements Runnable {
 			
 			}
 
+		//read files
 		public void transferFiles(String filename, int sendPort) {
-		   int block_num = 0;
+		   int blockNum = 0;
 		   byte[] msg = new byte[516];
 		   byte[] data = new byte[100];
 	       receivePacket = new DatagramPacket(data, data.length);
 		   msg[0] = 0;
 		   msg[1] = 3;
-		   msg[2] = (byte) block_num;
 		   byte[] dataBuffer = new byte[516];
 		   try {
-			   BufferedInputStream bis = new BufferedInputStream(new FileInputStream(filename));   
+			   BufferedInputStream bis = new BufferedInputStream(new FileInputStream(SERVERDIRECTORY + "\\"+ fileName));   
 
 			   while(bis.read(dataBuffer) != -1) {
-				   sendPacket = new DatagramPacket(dataBuffer, dataBuffer.length);
+				   msg[2] = (byte) blockNum;
+				   System.arraycopy(dataBuffer, 0, msg, 2, dataBuffer.length);
+				   sendPacket = new DatagramPacket(msg, msg.length);
 				   try {
 			           sendSocket.send(sendPacket);
 			        } catch (IOException e) {
@@ -338,6 +340,7 @@ public class TFTPClientConnectionThread implements Runnable {
 			           System.exit(1);
 			        }
 				   int len = receivePacket.getLength();
+				   
 					if (verboseMode) {
 						System.out.println("Client: Packet received:");
 						System.out.println("From host: " + receivePacket.getAddress());
@@ -353,6 +356,8 @@ public class TFTPClientConnectionThread implements Runnable {
 					
 		           //byte[] ack = new byte[] {0,4,0,0};
 		           //boolean verified = Arrays.equals(ack, data);
+					blockNum++;
+					
 			   }
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block

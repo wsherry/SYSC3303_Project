@@ -285,7 +285,7 @@ public class TFTPClient {
 	}
 
 	public void transferFiles(String filename, int sendPort) {
-	   int block_num = 0;
+	   int blockNum = 0;
 	   byte[] msg = new byte[516];
 	   byte[] data = new byte[100];
        receivePacket = new DatagramPacket(data, data.length);
@@ -296,9 +296,10 @@ public class TFTPClient {
 		   BufferedInputStream bis = new BufferedInputStream(new FileInputStream(filename));   
 
 		   while(bis.read(dataBuffer) != -1) {
-			   msg[2] = (byte) block_num;
+			   msg[2] = (byte) blockNum;
+			   System.arraycopy(dataBuffer, 0, msg, 2, dataBuffer.length);
 
-			   sendPacket = new DatagramPacket(dataBuffer, dataBuffer.length, InetAddress.getByName(ipAddress), sendPort);
+			   sendPacket = new DatagramPacket(msg, msg.length, InetAddress.getByName(ipAddress), sendPort);
 			   try {
 		           sendReceiveSocket.send(sendPacket);
 		        } catch (IOException e) {
@@ -325,7 +326,7 @@ public class TFTPClient {
 				} else {
 					System.out.println("Client: Packet received.");
 				}
-				block_num++;
+				blockNum++;
 				
 				if (len < 516) {
 					System.out.println("Client: Last packet sent.");
