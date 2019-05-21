@@ -11,6 +11,7 @@ Contributions:
 Alexei Tchekansky:
 -Mulithreading between the client and the server
 -UML Class Diagrams
+-Testing
 
 Ben Bozec:
 -Implemented the "shut down" functioanlity that shut down a server
@@ -26,6 +27,7 @@ Pragya Singh:
 Sherry Wang:
 -Steady state file tranfers (client side) 
 -Use case diagrams
+-Testing
 
 Project Overview for Iteration 0 and 1:
 The programs allows clients to establish WRQ connections and RRQ connections with the server. This is done due to the implementation of steady-state file transfer between the client and the server. Ever RRQ the server will respond with specific data block of 0-1 bytes in order to see if a file was written or read from properly respond witha ACK block 0. For every WRQ request ther sever will The error simulator will just pass on packets (client to server, and server to client).The server has a new thread that represents a new client and this connection thread is used to connect with the client. The error simulator in this iteration only passes a package between the client and the server, in this iteration no error simulation is done. 
