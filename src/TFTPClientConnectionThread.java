@@ -250,13 +250,21 @@ public class TFTPClientConnectionThread implements Runnable {
 			byte[] data = new byte[516];
 			receivePacket = new DatagramPacket(data, data.length);
 			int len = receivePacket.getLength();
-			BufferedOutputStream out;
+			File file = new File(SERVERDIRECTORY + "\\"+ fileName);
+
 			try {
-				out = new BufferedOutputStream(new FileOutputStream(SERVERDIRECTORY + "\\"+ fileName));
+			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(SERVERDIRECTORY + "\\"+ fileName));
+
 				while (true) {
 					
 					if (len < 516) {
 						System.out.println("Received all data packets");
+						try {
+							out.close();
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 						break;
 					}
 					System.out.println("Server: Waiting for data packet.");
@@ -274,6 +282,13 @@ public class TFTPClientConnectionThread implements Runnable {
 						data = receivePacket.getData();
 
 						System.out.println("Server: Data Packet received.");
+						
+						try {
+							out.write(data, 4, data.length - 4);						
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 
 						if (verboseMode) {
 							System.out.println("From host: " + receivePacket.getAddress());
@@ -284,18 +299,14 @@ public class TFTPClientConnectionThread implements Runnable {
 								System.out.println("byte " + j + " " + data[j]);
 							}
 						}
-						
-						try {
-							out.write(data, 4, data.length - 4);
-						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
 
 					}
 			} catch (FileNotFoundException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
+			} catch (IOException e2) {
+				// TODO Auto-generated catch block
+				e2.printStackTrace();
 			}
 
 			
@@ -329,8 +340,8 @@ public class TFTPClientConnectionThread implements Runnable {
 				   
 				   if (verboseMode) {
 						System.out.println("Server: Packet sent:");
-						System.out.println("From host: " + receivePacket.getAddress());
-						System.out.println("Host port: " + receivePacket.getPort());
+						System.out.println("From host: " + sendPacket.getAddress());
+						System.out.println("Host port: " + sendPacket.getPort());
 						System.out.println("Length: " + sendPacket.getLength());
 						System.out.println("Containing: ");
 						for (int j = 0; j < sendPacket.getLength(); j++) {
