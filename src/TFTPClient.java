@@ -236,6 +236,7 @@ public class TFTPClient {
 			}
 
 			if (!ackVerified) // re-send request
+				fileName = clientDirectory + "//" + fileName;
 				if (request == RequestType.READ) {
 					receiveFiles(fileName, sendPort);
 				} else {
