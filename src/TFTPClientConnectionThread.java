@@ -19,9 +19,9 @@ public class TFTPClientConnectionThread implements Runnable {
 
 	// File path DESKTOP
 	// TODO Must be changed based on system
-	private static final String SERVERDIRECTORY = "C:\\Users\\Sherry Wang\\Desktop";
-
-	public TFTPClientConnectionThread(boolean verboseMode) {
+	//private static final String SERVERDIRECTORY = "C:\\Users\\Sherry Wang\\Desktop";
+	private String serverDirectory;
+	public TFTPClientConnectionThread(boolean verboseMode, String serverDirectory ) {
 		try {
 			// Construct a datagram socket and bind it to port 69
 			// on the local host machine. This socket will be used to
@@ -33,6 +33,7 @@ public class TFTPClientConnectionThread implements Runnable {
 		}
 
 		this.verboseMode = verboseMode;
+		this.serverDirectory = serverDirectory;
 	}
 
 	/**
@@ -257,7 +258,7 @@ public class TFTPClientConnectionThread implements Runnable {
 			int len = receivePacket.getLength();
 
 			try {
-				BufferedOutputStream out = new BufferedOutputStream( new FileOutputStream(SERVERDIRECTORY + "\\" + fileName));
+				BufferedOutputStream out = new BufferedOutputStream( new FileOutputStream(serverDirectory + "\\" + fileName));
 
 				while (true) {
 
@@ -360,8 +361,8 @@ public class TFTPClientConnectionThread implements Runnable {
 			byte[] dataBuffer = new byte[512];
 			try {
 				BufferedInputStream bis = new BufferedInputStream(
-						new FileInputStream(SERVERDIRECTORY + "\\" + filename));
-				System.out.println(SERVERDIRECTORY + "\\" + filename);
+						new FileInputStream(serverDirectory + "\\" + filename));
+				System.out.println(serverDirectory + "\\" + filename);
 				System.out.println("Within Transfer files (for reading) server");
 				int bytesRead = 0;
 				while ((bytesRead = bis.read(dataBuffer, 0, 512)) != -1) {
@@ -418,8 +419,6 @@ public class TFTPClientConnectionThread implements Runnable {
 						System.out.println("Server: Packet received.");
 					}
 
-					// byte[] ack = new byte[] {0,4,0,0};
-					// boolean verified = Arrays.equals(ack, data);
 					blockNum++;
 
 				}

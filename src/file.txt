@@ -1,4 +1,4 @@
-Your error simulation code must be a completely separate program (or programs)
+WOOOOOOOOOOOOOOOOOOOW. Your error simulation code must be a completely separate program (or programs)
 from your client and server code. The error simulator communicates with the client
 and the server using DatagramSocket objects. The number of threads for this code is
 your choice. We will use port 23 for the error simulator. Your error simulator may be

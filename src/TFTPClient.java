@@ -13,12 +13,10 @@ public class TFTPClient {
 	private DatagramPacket sendPacket, receivePacket;
 	private DatagramSocket sendReceiveSocket;
 	private static boolean verboseMode = false; // false for quiet and true for verbose
-	// TODO: uncomment
-	// private static String ipAddress = "";
-	private static String ipAddress = "192.168.0.21";
-	// TODO: uncomment
-	// private static String clientDirectory = "";
-	private static String clientDirectory = "C:\\Users\\Sherry Wang\\Documents\\GitHub\\SYSC3303_Project\\src";
+	private static String ipAddress = "";
+	//private static String ipAddress = "192.168.0.21";
+	private static String clientDirectory = "";
+	//private static String clientDirectory = "C:\\Users\\Sherry Wang\\Documents\\GitHub\\SYSC3303_Project\\src";
 	private static boolean finishedRequest = false;
 	private boolean running = true;
 
@@ -431,8 +429,7 @@ public class TFTPClient {
 				else
 					input = "entered"; // set input to arbitrary string to leave loop
 			} else {
-				// TODO: uncomment
-				// ipAddress = input;
+				ipAddress = input;
 				System.out.println("IP address is now: " + ipAddress);
 			}
 		}
@@ -454,8 +451,7 @@ public class TFTPClient {
 				else
 					input = "entered"; // set input to arbitrary string to leave loop
 			} else {
-				// TODO: uncomment
-				// clientDirectory = input;
+				clientDirectory = input;
 				System.out.println("Client directory is now: " + clientDirectory);
 			}
 		}
