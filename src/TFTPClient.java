@@ -252,7 +252,7 @@ public class TFTPClient {
 		sendReceiveSocket.close();
 	}
 
-	public void receiveFiles(String fileName, int sendPort) {
+/*	public void receiveFiles(String fileName, int sendPort) {
 
 		byte[] data = new byte[516];
 		int len = 516;
@@ -299,6 +299,94 @@ public class TFTPClient {
 				System.exit(1);
 			}
 
+		}
+	}*/
+	
+	public void receiveFiles(String fileName, int sendPort) {
+
+		byte[] data = new byte[516];
+		receivePacket = new DatagramPacket(data, data.length);
+		int len = receivePacket.getLength();
+
+		try {
+			BufferedOutputStream out = new BufferedOutputStream( new FileOutputStream(serverDirectory + "\\" + fileName));
+
+			while (true) {
+
+				if (len < 516) {
+					System.out.println("Received all data packets");
+					try {
+						out.close();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					break;
+				}
+				System.out.println("Client: Waiting for data packet.");
+
+				try {
+					// Block until a datagram is received via sendReceiveSocket.
+					sendReceiveSocket.receive(receivePacket);
+				} catch (IOException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+				// Process the received datagram.
+				len = receivePacket.getLength();
+				data = receivePacket.getData();
+
+				System.out.println("Client: Data Packet received.");
+
+				try {
+					out.write(data, 4, data.length - 4);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+				if (verboseMode) {
+					System.out.println("From host: " + receivePacket.getAddress());
+					System.out.println("Host port: " + receivePacket.getPort());
+					System.out.println("Length: " + len);
+					System.out.println("Containing: ");
+					for (int j = 0; j < len; j++) {
+						System.out.println("byte " + j + " " + data[j]);
+					}
+				}
+				
+				byte[] ack = new byte[] { 0, 4, 0, 0 };
+				
+				sendPacket = new DatagramPacket(ack, ack.length, receivePacket.getAddress(),
+						receivePacket.getPort());
+				
+				try {
+					sendReceiveSocket.send(sendPacket);
+				} catch (IOException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+
+				if (verboseMode) {
+					System.out.println("Client: Sending ACK packet:");
+					System.out.println("To host: " + receivePacket.getAddress());
+					System.out.println("Destination host port: " + receivePacket.getPort());
+					System.out.println("Length: " + sendPacket.getLength());
+					System.out.println("Containing: ");
+					for (int j = 0; j < sendPacket.getLength(); j++) {
+						System.out.println("byte " + j + " " + ack[j]);
+					}
+				} else {
+					System.out.println("Client: ACK Packet sent.");
+				}
+
+			}
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (IOException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
 		}
 	}
 
