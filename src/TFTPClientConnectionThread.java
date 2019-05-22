@@ -307,6 +307,13 @@ public class TFTPClientConnectionThread implements Runnable {
 					
 					sendPacket = new DatagramPacket(ack, ack.length, receivePacket.getAddress(),
 							receivePacket.getPort());
+					
+					try {
+						sendSocket.send(sendPacket);
+					} catch (IOException e) {
+						e.printStackTrace();
+						System.exit(1);
+					}
 
 					if (verboseMode) {
 						System.out.println("TFTPClientConnectionThread: Sending ACK packet:");
