@@ -52,8 +52,7 @@ public class TFTPClientConnectionThread implements Runnable {
 			System.out.println("------------------------------------------------------");
 			System.out.println("Type 'quit' to shutdown.");
 			try {
-				System.out
-						.println("Server (" + InetAddress.getLocalHost().getHostAddress() + ") : Waiting for packet.");
+				System.out.println("Server (" + InetAddress.getLocalHost().getHostAddress() + ") : Waiting for packet.");
 			} catch (UnknownHostException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -152,6 +151,7 @@ public class TFTPClientConnectionThread implements Runnable {
 				// create new thread for sending data
 				Runnable writeReqThread = new TFTPsendThread(request, receivePacket, verboseMode);
 				new Thread(writeReqThread).start();
+				System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 				break;
 			}
 
@@ -162,6 +162,7 @@ public class TFTPClientConnectionThread implements Runnable {
 			 * Auto-generated catch block e.printStackTrace(); } }
 			 */
 		} // end of loop
+		
 	}
 
 	public class TFTPsendThread implements Runnable {
@@ -336,7 +337,6 @@ public class TFTPClientConnectionThread implements Runnable {
 				// TODO Auto-generated catch block
 				e2.printStackTrace();
 			}
-
 		}
 
 		// Converts the blocknumber as an int into a 2 byte array
