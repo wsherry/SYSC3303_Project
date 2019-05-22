@@ -19,9 +19,9 @@ public class TFTPClientConnectionThread implements Runnable {
 
 	// File path DESKTOP
 	// TODO Must be changed based on system
-	//private static final String SERVERDIRECTORY = "C:\\Users\\Sherry Wang\\Desktop";
-	private String serverDirectory;
-	public TFTPClientConnectionThread(boolean verboseMode, String serverDirectory ) {
+	private static final String SERVERDIRECTORY = "C:\\Users\\Alan\\Desktop";
+
+	public TFTPClientConnectionThread(boolean verboseMode) {
 		try {
 			// Construct a datagram socket and bind it to port 69
 			// on the local host machine. This socket will be used to
@@ -33,7 +33,6 @@ public class TFTPClientConnectionThread implements Runnable {
 		}
 
 		this.verboseMode = verboseMode;
-		this.serverDirectory = serverDirectory;
 	}
 
 	/**
@@ -45,7 +44,7 @@ public class TFTPClientConnectionThread implements Runnable {
 
 	public void run() {
 		int len, j = 0, k = 0;
-
+		
 		while (true) { // loop forever
 			byte[] data = new byte[100];
 			receivePacket = new DatagramPacket(data, data.length);
@@ -53,7 +52,8 @@ public class TFTPClientConnectionThread implements Runnable {
 			System.out.println("------------------------------------------------------");
 			System.out.println("Type 'quit' to shutdown.");
 			try {
-				System.out.println("Server (" + InetAddress.getLocalHost().getHostAddress() + ") : Waiting for packet.");
+				System.out
+						.println("Server (" + InetAddress.getLocalHost().getHostAddress() + ") : Waiting for packet.");
 			} catch (UnknownHostException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -152,7 +152,6 @@ public class TFTPClientConnectionThread implements Runnable {
 				// create new thread for sending data
 				Runnable writeReqThread = new TFTPsendThread(request, receivePacket, verboseMode);
 				new Thread(writeReqThread).start();
-				System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 				break;
 			}
 
@@ -163,7 +162,6 @@ public class TFTPClientConnectionThread implements Runnable {
 			 * Auto-generated catch block e.printStackTrace(); } }
 			 */
 		} // end of loop
-		
 	}
 
 	public class TFTPsendThread implements Runnable {
@@ -193,12 +191,13 @@ public class TFTPClientConnectionThread implements Runnable {
 			byte[] response = new byte[4];
 			// Create a response.
 			if (request == Request.READ) { // for Read it's 0301
-				response = readResp;
+				//response = readResp;
+				transferFiles(fileName, receivePacket.getPort(), receivePacket);
 			} else if (request == Request.WRITE) { // for Write it's 0400
 				response = writeResp;
+				send(response);
 			}
 
-			send(response);
 		}
 
 		private void send(byte[] response) {
@@ -240,9 +239,9 @@ public class TFTPClientConnectionThread implements Runnable {
 			System.out.println("TFTPClientConnectionThread: packet sent using port " + sendSocket.getLocalPort());
 			System.out.println();
 
-			if (request == Request.READ) {
+			/*if (request == Request.READ) {
 				transferFiles(fileName, sendSocket.getLocalPort());
-			} else if (request == Request.WRITE) {
+			} else */if (request == Request.WRITE) {
 				receiveFiles(fileName, sendSocket.getLocalPort());
 			}
 
@@ -258,7 +257,7 @@ public class TFTPClientConnectionThread implements Runnable {
 			int len = receivePacket.getLength();
 
 			try {
-				BufferedOutputStream out = new BufferedOutputStream( new FileOutputStream(serverDirectory + "\\" + fileName));
+				BufferedOutputStream out = new BufferedOutputStream( new FileOutputStream(SERVERDIRECTORY + "\\" + fileName));
 
 				while (true) {
 
@@ -338,6 +337,7 @@ public class TFTPClientConnectionThread implements Runnable {
 				// TODO Auto-generated catch block
 				e2.printStackTrace();
 			}
+
 		}
 
 		// Converts the blocknumber as an int into a 2 byte array
@@ -354,15 +354,15 @@ public class TFTPClientConnectionThread implements Runnable {
 		}
 
 		// read files
-		public void transferFiles(String filename, int sendPort) {
-			int blockNum = 0;
-			byte[] data = new byte[100];
-			receivePacket = new DatagramPacket(data, data.length);
-			byte[] dataBuffer = new byte[512];
-			try {
-				BufferedInputStream bis = new BufferedInputStream(
-						new FileInputStream(serverDirectory + "\\" + filename));
-				System.out.println(serverDirectory + "\\" + filename);
+		public void transferFiles(String filename, int sendPort, DatagramPacket receivePacket) {
+		   int blockNum = 0;
+		   byte[] data = new byte[100];
+	       receivePacket.setData(data, 0, data.length);;
+		   byte[] dataBuffer = new byte[512];
+		   try {
+			   BufferedInputStream bis = new BufferedInputStream(
+						new FileInputStream(SERVERDIRECTORY + "\\" + filename));
+				System.out.println(SERVERDIRECTORY + "\\" + filename);
 				System.out.println("Within Transfer files (for reading) server");
 				int bytesRead = 0;
 				while ((bytesRead = bis.read(dataBuffer, 0, 512)) != -1) {
@@ -375,16 +375,15 @@ public class TFTPClientConnectionThread implements Runnable {
 					msg[3] = blockNumBytes(blockNum)[1];
 					System.arraycopy(dataBuffer, 0, msg, 4, bytesRead);
 					System.out.println("before sendPacket");
-					sendPacket = new DatagramPacket(msg, msg.length, sendPacket.getAddress(), sendPort);
-					System.out.println(sendPacket.getAddress());
-					System.out.println(sendPacket.getPort());
+					
+					sendPacket = new DatagramPacket(msg, msg.length, receivePacket.getAddress(), sendPort);
 					try {
 						sendSocket.send(sendPacket);
-					} catch (IOException e) {
-						e.printStackTrace();
-						System.exit(1);
-					}
-
+				    } catch (IOException e) {
+				        e.printStackTrace();
+				        System.exit(1);
+				    }
+					
 					if (verboseMode) {
 						System.out.println("Server: Packet sent:");
 						System.out.println("From host: " + sendPacket.getAddress());
@@ -392,36 +391,41 @@ public class TFTPClientConnectionThread implements Runnable {
 						System.out.println("Length: " + sendPacket.getLength());
 						System.out.println("Containing: ");
 						for (int j = 0; j < sendPacket.getLength(); j++) {
-							System.out.println("byte " + j + " " + data[j]);
+							System.out.println("byte " + j + " " + msg[j]);
 						}
 					} else {
-						System.out.println("Server: Packet received.");
+						System.out.println("Server: Packet sent.");
 					}
+
+					System.out.println("Server: Waiting for packet.");
+
 					try {
-						// Block until a datagram is received via sendReceiveSocket.
-						receiveSocket.receive(receivePacket);
-					} catch (IOException e) {
-						e.printStackTrace();
-						System.exit(1);
-					}
-					int len = receivePacket.getLength();
-
-					if (verboseMode) {
-						System.out.println("Client: Packet received:");
-						System.out.println("From host: " + receivePacket.getAddress());
-						System.out.println("Host port: " + receivePacket.getPort());
-						System.out.println("Length: " + len);
-						System.out.println("Containing: ");
-						for (int j = 0; j < len; j++) {
-							System.out.println("byte " + j + " " + data[j]);
+				           // Block until a datagram is received via sendReceiveSocket.
+				           receiveSocket.receive(receivePacket);
+				        } catch(IOException e) {
+				           e.printStackTrace();
+				           System.exit(1);
+				        }
+					   int len = receivePacket.getLength();
+					   
+						if (verboseMode) {
+							System.out.println("Client: Packet received:");
+							System.out.println("From host: " + receivePacket.getAddress());
+							System.out.println("Host port: " + receivePacket.getPort());
+							System.out.println("Length: " + len);
+							System.out.println("Containing: ");
+							for (int j = 0; j < len; j++) {
+								System.out.println("byte " + j + " " + data[j]);
+							}
+						} else {
+							System.out.println("Server: Packet received.");
 						}
-					} else {
-						System.out.println("Server: Packet received.");
-					}
 
+					// byte[] ack = new byte[] {0,4,0,0};
+					// boolean verified = Arrays.equals(ack, data);
 					blockNum++;
-
 				}
+				System.out.println("Finished Read");
 				bis.close();
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block

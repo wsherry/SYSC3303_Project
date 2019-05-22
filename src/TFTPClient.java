@@ -1,4 +1,3 @@
-
 // TFTPClient.java
 // This class is the client side for a very simple assignment based on TFTP on
 // UDP/IP. The client uses one port and sends a read or write request and gets 
@@ -203,7 +202,7 @@ public class TFTPClient {
 
 			data = new byte[100];
 			receivePacket = new DatagramPacket(data, data.length);
-
+			if (request!=RequestType.READ) {
 			System.out.println("Client: Waiting for packet.");
 			try {
 				// Block until a datagram is received via sendReceiveSocket.
@@ -239,27 +238,24 @@ public class TFTPClient {
 
 			if (!ackVerified) // re-send request
 				fileName = clientDirectory + "//" + fileName;
-			if (request == RequestType.READ) {
-				receiveFiles(fileName, sendPort);
-			} else {
+			if (request == RequestType.WRITE) {
 				transferFiles(fileName, sendPort);
 			}
-
-			System.out.println();
+		} else {
+			receiveFiles(fileName, sendPort);
 		}
+		System.out.println();
+	}
 		System.out.println("Client is off");
 		// We're finished, so close the socket.
 		sendReceiveSocket.close();
 	}
 
 /*	public void receiveFiles(String fileName, int sendPort) {
-
 		byte[] data = new byte[516];
 		int len = 516;
 		receivePacket = new DatagramPacket(data, data.length);
-
 		System.out.println("Client: Waiting for data packet.");
-
 		while (len == 516) {
 			try {
 				// Block until a datagram is received via sendReceiveSocket.
@@ -268,12 +264,9 @@ public class TFTPClient {
 				e.printStackTrace();
 				System.exit(1);
 			}
-
 			// Process the received datagram.
 			len = receivePacket.getLength();
-
 			System.out.println("Client: Data Packet received.");
-
 			if (verboseMode) {
 				System.out.println("From host: " + receivePacket.getAddress());
 				System.out.println("Host port: " + receivePacket.getPort());
@@ -283,9 +276,7 @@ public class TFTPClient {
 					System.out.println("byte " + j + " " + data[j]);
 				}
 			}
-
 			byte[] ack = new byte[] { 0, 4, 0, 0 };
-
 			try {
 				sendPacket = new DatagramPacket(ack, ack.length, InetAddress.getByName(ipAddress), sendPort);
 			} catch (UnknownHostException e1) {
@@ -298,7 +289,6 @@ public class TFTPClient {
 				e.printStackTrace();
 				System.exit(1);
 			}
-
 		}
 	}*/
 	
@@ -309,7 +299,7 @@ public class TFTPClient {
 		int len = receivePacket.getLength();
 
 		try {
-			BufferedOutputStream out = new BufferedOutputStream( new FileOutputStream(serverDirectory + "\\" + fileName));
+			BufferedOutputStream out = new BufferedOutputStream( new FileOutputStream(fileName));
 
 			while (true) {
 
@@ -357,8 +347,7 @@ public class TFTPClient {
 				
 				byte[] ack = new byte[] { 0, 4, 0, 0 };
 				
-				sendPacket = new DatagramPacket(ack, ack.length, receivePacket.getAddress(),
-						receivePacket.getPort());
+				sendPacket = new DatagramPacket(ack, ack.length, InetAddress.getByName(ipAddress), sendPort);
 				
 				try {
 					sendReceiveSocket.send(sendPacket);
@@ -381,9 +370,6 @@ public class TFTPClient {
 				}
 
 			}
-		} catch (FileNotFoundException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
 		} catch (IOException e2) {
 			// TODO Auto-generated catch block
 			e2.printStackTrace();
