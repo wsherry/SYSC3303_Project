@@ -19,9 +19,9 @@ public class TFTPClientConnectionThread implements Runnable {
 
 	// File path DESKTOP
 	// TODO Must be changed based on system
-	private static final String SERVERDIRECTORY = "C:\\Users\\Alan\\Desktop";
+	private String serverDirectory;
 
-	public TFTPClientConnectionThread(boolean verboseMode) {
+	public TFTPClientConnectionThread(boolean verboseMode, String serverDirectory ) {
 		try {
 			// Construct a datagram socket and bind it to port 69
 			// on the local host machine. This socket will be used to
@@ -33,6 +33,7 @@ public class TFTPClientConnectionThread implements Runnable {
 		}
 
 		this.verboseMode = verboseMode;
+		this.serverDirectory = serverDirectory;
 	}
 
 	/**
@@ -250,27 +251,15 @@ public class TFTPClientConnectionThread implements Runnable {
 		}
 
 		// write to file
-		public void receiveFiles(String fileName, int sendPort) {
-
-			byte[] data = new byte[516];
-			receivePacket = new DatagramPacket(data, data.length);
-			int len = receivePacket.getLength();
+		public void receiveFiles(String fileName, int sendPort) {			
 
 			try {
-				BufferedOutputStream out = new BufferedOutputStream( new FileOutputStream(SERVERDIRECTORY + "\\" + fileName));
-
+				BufferedOutputStream out = new BufferedOutputStream( new FileOutputStream(serverDirectory + "\\" + fileName));
 				while (true) {
+					byte[] data = new byte[516];
+					receivePacket = new DatagramPacket(data, data.length);
+					int len = receivePacket.getLength();
 
-					if (len < 516) {
-						System.out.println("Received all data packets");
-						try {
-							out.close();
-						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-						break;
-					}
 					System.out.println("Server: Waiting for data packet.");
 
 					try {
@@ -284,7 +273,6 @@ public class TFTPClientConnectionThread implements Runnable {
 					// Process the received datagram.
 					len = receivePacket.getLength();
 					data = receivePacket.getData();
-
 					System.out.println("Server: Data Packet received.");
 
 					try {
@@ -328,11 +316,19 @@ public class TFTPClientConnectionThread implements Runnable {
 					} else {
 						System.out.println("Server: ACK Packet sent.");
 					}
-
+					
+					if (len < 516) {
+						System.out.println("Received all data packets");
+						
+						try {
+							out.close();
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						break;
+					}
 				}
-			} catch (FileNotFoundException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
 			} catch (IOException e2) {
 				// TODO Auto-generated catch block
 				e2.printStackTrace();
@@ -361,8 +357,8 @@ public class TFTPClientConnectionThread implements Runnable {
 		   byte[] dataBuffer = new byte[512];
 		   try {
 			   BufferedInputStream bis = new BufferedInputStream(
-						new FileInputStream(SERVERDIRECTORY + "\\" + filename));
-				System.out.println(SERVERDIRECTORY + "\\" + filename);
+						new FileInputStream(serverDirectory + "\\" + filename));
+				System.out.println(serverDirectory + "\\" + filename);
 				System.out.println("Within Transfer files (for reading) server");
 				int bytesRead = 0;
 				while ((bytesRead = bis.read(dataBuffer, 0, 512)) != -1) {
@@ -421,8 +417,9 @@ public class TFTPClientConnectionThread implements Runnable {
 							System.out.println("Server: Packet received.");
 						}
 
-					// byte[] ack = new byte[] {0,4,0,0};
-					// boolean verified = Arrays.equals(ack, data);
+						if (sendPacket.getLength() < 516) {
+							System.out.println("Server: Last packet sent.");
+						}
 					blockNum++;
 				}
 				System.out.println("Finished Read");

@@ -11,7 +11,6 @@ public class TFTPServer {
    // UDP datagram packets and sockets used to send / receive
    private static boolean verboseMode = false; //false for quiet and true for verbose
    private static String serverDirectory = "";
-   private static boolean finishedRequest = false;
    
    /*public TFTPServer()
    {
@@ -37,8 +36,8 @@ public class TFTPServer {
 	  String input;
 	  
 	  //create ne thread for receiving
-	  TFTPClientConnectionThread recieveThread = new TFTPClientConnectionThread(verboseMode);
-      new Thread(recieveThread).start();
+	  TFTPClientConnectionThread recieveThread = new TFTPClientConnectionThread(verboseMode, serverDirectory);      
+	  new Thread(recieveThread).start();
 
       while(true) { // loop forever
     	  input = "";

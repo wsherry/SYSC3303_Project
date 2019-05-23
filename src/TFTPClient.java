@@ -294,25 +294,14 @@ public class TFTPClient {
 	
 	public void receiveFiles(String fileName, int sendPort) {
 
-		byte[] data = new byte[516];
-		receivePacket = new DatagramPacket(data, data.length);
-		int len = receivePacket.getLength();
-
 		try {
 			BufferedOutputStream out = new BufferedOutputStream( new FileOutputStream(fileName));
 
 			while (true) {
-
-				if (len < 516) {
-					System.out.println("Received all data packets");
-					try {
-						out.close();
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					break;
-				}
+				byte[] data = new byte[516];
+				receivePacket = new DatagramPacket(data, data.length);
+				int len = receivePacket.getLength();
+				
 				System.out.println("Client: Waiting for data packet.");
 
 				try {
@@ -368,6 +357,17 @@ public class TFTPClient {
 				} else {
 					System.out.println("Client: ACK Packet sent.");
 				}
+				
+				if (len < 516) {
+					System.out.println("Received all data packets");
+					try {
+						out.close();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					break;
+				}
 
 			}
 		} catch (IOException e2) {
@@ -392,11 +392,9 @@ public class TFTPClient {
 				msg[2] = blockNumBytes(blockNum)[0];
 				msg[3] = blockNumBytes(blockNum)[1];
 
-				System.out.println("before sendPacket");
 				System.arraycopy(dataBuffer, 0, msg, 4, bytesRead);
 				sendPacket = new DatagramPacket(msg, msg.length, InetAddress.getByName(ipAddress), sendPort);
-				System.out.println("after sendPacket");
-
+				
 				try {
 					sendReceiveSocket.send(sendPacket);
 				} catch (IOException e) {
@@ -408,9 +406,7 @@ public class TFTPClient {
 				
 				try {
 					// Block until a datagram is received via sendReceiveSocket.
-					System.out.println("re");
 					sendReceiveSocket.receive(receivePacket);
-					System.out.println("re2");
 				} catch (IOException e) {
 					e.printStackTrace();
 					System.exit(1);
@@ -429,8 +425,8 @@ public class TFTPClient {
 					System.out.println("Client: Packet received.");
 				}
 				blockNum++;
-
-				if (len < 516) {
+				
+				if (sendPacket.getLength() < 516) {
 					System.out.println("Client: Last packet sent.");
 				}
 				
