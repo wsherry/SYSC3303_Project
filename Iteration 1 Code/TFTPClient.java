@@ -13,7 +13,9 @@ public class TFTPClient {
 	private DatagramSocket sendReceiveSocket;
 	private static boolean verboseMode = false; // false for quiet and true for verbose
 	private static String ipAddress = "";
+	//private static String ipAddress = "192.168.0.21";
 	private static String clientDirectory = "";
+	//private static String clientDirectory = "C:\\Users\\Sherry Wang\\Documents\\GitHub\\SYSC3303_Project\\src";
 	private static boolean finishedRequest = false;
 	private boolean running = true;
 
@@ -156,11 +158,11 @@ public class TFTPClient {
 			// address of the local host.
 			// 69 - the destination port number on the destination host.
 			try {
-				
-				  sendPacket = new DatagramPacket(msg, len, InetAddress.getLocalHost(),
-				  sendPort);
-				 //*/
-				//sendPacket = new DatagramPacket(msg, len, InetAddress.getByName(ipAddress), sendPort);
+
+				sendPacket = new DatagramPacket(msg, len, InetAddress.getLocalHost(), sendPort);
+				// */
+				// sendPacket = new DatagramPacket(msg, len, InetAddress.getByName(ipAddress),
+				// sendPort);
 			} catch (UnknownHostException e) {
 				e.printStackTrace();
 				System.exit(1);
@@ -200,7 +202,7 @@ public class TFTPClient {
 
 			data = new byte[100];
 			receivePacket = new DatagramPacket(data, data.length);
-
+			if (request!=RequestType.READ) {
 			System.out.println("Client: Waiting for packet.");
 			try {
 				// Block until a datagram is received via sendReceiveSocket.
@@ -236,27 +238,24 @@ public class TFTPClient {
 
 			if (!ackVerified) // re-send request
 				fileName = clientDirectory + "//" + fileName;
-				if (request == RequestType.READ) {
-					receiveFiles(fileName, sendPort);
-				} else {
-					transferFiles(fileName, sendPort);
-				}
-
-			System.out.println();
+			if (request == RequestType.WRITE) {
+				transferFiles(fileName, sendPort);
+			}
+		} else {
+			receiveFiles(fileName, sendPort);
 		}
+		System.out.println();
+	}
 		System.out.println("Client is off");
 		// We're finished, so close the socket.
 		sendReceiveSocket.close();
 	}
 
-	public void receiveFiles(String fileName, int sendPort) {
-
+/*	public void receiveFiles(String fileName, int sendPort) {
 		byte[] data = new byte[516];
 		int len = 516;
 		receivePacket = new DatagramPacket(data, data.length);
-
 		System.out.println("Client: Waiting for data packet.");
-		
 		while (len == 516) {
 			try {
 				// Block until a datagram is received via sendReceiveSocket.
@@ -265,12 +264,9 @@ public class TFTPClient {
 				e.printStackTrace();
 				System.exit(1);
 			}
-
 			// Process the received datagram.
 			len = receivePacket.getLength();
-
 			System.out.println("Client: Data Packet received.");
-
 			if (verboseMode) {
 				System.out.println("From host: " + receivePacket.getAddress());
 				System.out.println("Host port: " + receivePacket.getPort());
@@ -280,41 +276,142 @@ public class TFTPClient {
 					System.out.println("byte " + j + " " + data[j]);
 				}
 			}
+			byte[] ack = new byte[] { 0, 4, 0, 0 };
+			try {
+				sendPacket = new DatagramPacket(ack, ack.length, InetAddress.getByName(ipAddress), sendPort);
+			} catch (UnknownHostException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			try {
+				sendReceiveSocket.send(sendPacket);
+			} catch (IOException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+		}
+	}*/
+	
+	public void receiveFiles(String fileName, int sendPort) {
+
+		try {
+			BufferedOutputStream out = new BufferedOutputStream( new FileOutputStream(fileName));
+
+			while (true) {
+				byte[] data = new byte[516];
+				receivePacket = new DatagramPacket(data, data.length);
+				int len = receivePacket.getLength();
+				
+				System.out.println("Client: Waiting for data packet.");
+
+				try {
+					// Block until a datagram is received via sendReceiveSocket.
+					sendReceiveSocket.receive(receivePacket);
+				} catch (IOException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+				// Process the received datagram.
+				len = receivePacket.getLength();
+				data = receivePacket.getData();
+
+				System.out.println("Client: Data Packet received.");
+
+				try {
+					out.write(data, 4, data.length - 4);
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+
+				if (verboseMode) {
+					System.out.println("From host: " + receivePacket.getAddress());
+					System.out.println("Host port: " + receivePacket.getPort());
+					System.out.println("Length: " + len);
+					System.out.println("Containing: ");
+					for (int j = 0; j < len; j++) {
+						System.out.println("byte " + j + " " + data[j]);
+					}
+				}
+				
+				byte[] ack = new byte[] { 0, 4, 0, 0 };
+				
+				sendPacket = new DatagramPacket(ack, ack.length, InetAddress.getByName(ipAddress), sendPort);
+				
+				try {
+					sendReceiveSocket.send(sendPacket);
+				} catch (IOException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+
+				if (verboseMode) {
+					System.out.println("Client: Sending ACK packet:");
+					System.out.println("To host: " + receivePacket.getAddress());
+					System.out.println("Destination host port: " + receivePacket.getPort());
+					System.out.println("Length: " + sendPacket.getLength());
+					System.out.println("Containing: ");
+					for (int j = 0; j < sendPacket.getLength(); j++) {
+						System.out.println("byte " + j + " " + ack[j]);
+					}
+				} else {
+					System.out.println("Client: ACK Packet sent.");
+				}
+				
+				if (len < 516) {
+					System.out.println("Received all data packets");
+					try {
+						out.close();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					break;
+				}
+
+			}
+		} catch (IOException e2) {
+			// TODO Auto-generated catch block
+			e2.printStackTrace();
 		}
 	}
 
 	public void transferFiles(String filename, int sendPort) {
-	   int blockNum = 0;
-	   byte[] data = new byte[100];
-       receivePacket = new DatagramPacket(data, data.length);
-	 
-	   byte[] dataBuffer = new byte[512];
-	   try {
-		   BufferedInputStream bis = new BufferedInputStream(new FileInputStream(filename));   
-		   int bytesRead = 0;
-		   while((bytesRead = bis.read(dataBuffer, 0, 512)) != -1) {
-			   byte[] msg = new byte[bytesRead + 3];
-			   msg[0] = 0;
-			   msg[1] = 3;
-			   msg[2] = (byte) blockNum;
-			   
-			   System.arraycopy(dataBuffer, 0, msg, 2, bytesRead);
-			   
-			   sendPacket = new DatagramPacket(msg, msg.length, InetAddress.getByName(ipAddress), sendPort);
-			   try {
-		           sendReceiveSocket.send(sendPacket);
-		        } catch (IOException e) {
-		           e.printStackTrace();
-		           System.exit(1);
-		        }
-			   try {
-		           // Block until a datagram is received via sendReceiveSocket.
-		           sendReceiveSocket.receive(receivePacket);
-		        } catch(IOException e) {
-		           e.printStackTrace();
-		           System.exit(1);
-		        }
-			   int len = receivePacket.getLength();
+		int blockNum = 0;
+		byte[] data = new byte[100];
+		receivePacket = new DatagramPacket(data, data.length);
+		byte[] dataBuffer = new byte[512];
+		try {
+			BufferedInputStream bis = new BufferedInputStream(new FileInputStream(filename));
+
+			int bytesRead = 0;
+			while ((bytesRead = bis.read(dataBuffer, 0, 512)) != -1) {
+				byte[] msg = new byte[bytesRead + 4];
+				msg[0] = 0;
+				msg[1] = 3;
+				msg[2] = blockNumBytes(blockNum)[0];
+				msg[3] = blockNumBytes(blockNum)[1];
+
+				System.arraycopy(dataBuffer, 0, msg, 4, bytesRead);
+				sendPacket = new DatagramPacket(msg, msg.length, InetAddress.getByName(ipAddress), sendPort);
+				
+				try {
+					sendReceiveSocket.send(sendPacket);
+				} catch (IOException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+				
+				System.out.println("Client: Data Packet sent.");
+				
+				try {
+					// Block until a datagram is received via sendReceiveSocket.
+					sendReceiveSocket.receive(receivePacket);
+				} catch (IOException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+				int len = receivePacket.getLength();
 				if (verboseMode) {
 					System.out.println("Client: Packet received:");
 					System.out.println("From host: " + receivePacket.getAddress());
@@ -329,18 +426,30 @@ public class TFTPClient {
 				}
 				blockNum++;
 				
-				if (len < 516) {
+				if (sendPacket.getLength() < 516) {
 					System.out.println("Client: Last packet sent.");
 				}
 				
-	           //byte[] ack = new byte[] {0,4,0,0};
-	           //sboolean verified = Arrays.equals(ack, data);
-		   }
+			}
+			bis.close();
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-   }
+	}
+
+	// Converts the blocknumber as an int into a 2 byte array
+	private byte[] blockNumBytes(int blockNum) {
+		byte[] blockNumArray = new byte[2];
+
+		// create the corresponding block number in 2 bytes
+		byte block1 = (byte) (blockNum / 256);
+		byte block2 = (byte) (blockNum % 256);
+		blockNumArray[0] = block1;
+		blockNumArray[1] = block2;
+		return blockNumArray;
+
+	}
 
 	/**
 	 * "Menu" for configuring the settings of client application
