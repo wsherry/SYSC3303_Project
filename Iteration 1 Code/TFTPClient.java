@@ -202,6 +202,7 @@ public class TFTPClient {
 
 			data = new byte[100];
 			receivePacket = new DatagramPacket(data, data.length);
+			fileName = clientDirectory + "//" + fileName;
 			if (request!=RequestType.READ) {
 			System.out.println("Client: Waiting for packet.");
 			try {
@@ -236,12 +237,11 @@ public class TFTPClient {
 				ackVerified = Arrays.equals(writeAck, data);
 			}
 
-			if (!ackVerified) // re-send request
-				fileName = clientDirectory + "//" + fileName;
+			//if (!ackVerified) // re-send request
+			fileName = clientDirectory + "//" + fileName;
 			if (request == RequestType.WRITE) {
 				transferFiles(fileName, sendPort);
-			}
-		} else {
+			}else {
 			receiveFiles(fileName, sendPort);
 		}
 		System.out.println();
