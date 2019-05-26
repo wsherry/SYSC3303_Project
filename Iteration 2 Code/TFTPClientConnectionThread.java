@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 //import TFTPClient.RequestType;
@@ -255,7 +256,7 @@ public class TFTPClientConnectionThread implements Runnable {
 
 		// write to file
 		public void receiveFiles(String fileName, int sendPort) {			
-
+			ArrayList<Integer> processedBlocks = new ArrayList<>();
 			try {
 				BufferedOutputStream out = new BufferedOutputStream( new FileOutputStream(serverDirectory + "\\" + fileName));
 				while (true) {
@@ -278,14 +279,24 @@ public class TFTPClientConnectionThread implements Runnable {
 					data = receivePacket.getData();
 					System.out.println("Server: Data Packet received.");
 
-					try {
-						out.write(data, 4, data.length - 4);
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+					// Check if it's a duplicate packet. If it is, we still want to send an ACK but not rewrite to the file.
+					if (!processedBlocks.contains(data[2]*10+data[3])) {
+						// This block number has not been processed. Write it to the file.
+						try {
+							out.write(data, 4, data.length - 4);
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						processedBlocks.add(data[2]*10+data[3]);
+					}  else {
+						if (verboseMode) {
+							System.out.println("Duplicate data packet received.");
+						}
 					}
-
+					
 					if (verboseMode) {
+						System.out.println("Block number: " + data[2] + data[3]);
 						System.out.println("From host: " + receivePacket.getAddress());
 						System.out.println("Host port: " + receivePacket.getPort());
 						System.out.println("Length: " + len);
@@ -295,7 +306,7 @@ public class TFTPClientConnectionThread implements Runnable {
 						}
 					}
 					
-					byte[] ack = new byte[] { 0, 4, 0, 0 };
+					byte[] ack = new byte[] { 0, 4, data[2], data[3]};
 					
 					sendPacket = new DatagramPacket(ack, ack.length, receivePacket.getAddress(),
 							receivePacket.getPort());

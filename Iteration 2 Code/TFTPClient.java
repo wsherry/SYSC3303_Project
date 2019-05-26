@@ -14,7 +14,7 @@ public class TFTPClient {
 	private static boolean verboseMode = false; // false for quiet and true for verbose
 	private static String ipAddress = "";
 	// private static String ipAddress = "192.168.0.21";
-	private static String clientDirectory = "";
+	private static String clientDirectory = "C:\\Alexei's Stuff\\Carleton University";
 	// private static String clientDirectory = "C:\\Users\\Sherry
 	// Wang\\Documents\\GitHub\\SYSC3303_Project\\src";
 	private static boolean finishedRequest = false;
@@ -273,7 +273,7 @@ public class TFTPClient {
 	 */
 
 	public void receiveFiles(String fileName, int sendPort) {
-
+		ArrayList<Integer> processedBlocks = new ArrayList<>();
 		try {
 			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(fileName));
 
@@ -297,14 +297,20 @@ public class TFTPClient {
 
 				System.out.println("Client: Data Packet received.");
 
-				try {
-					out.write(data, 4, data.length - 4);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				// Check if it's a duplicate packet. If it is, we still want to send an ACK but not rewrite to the file.
+				if (!processedBlocks.contains(data[2]*10+data[3])) {
+					// This block number has not been processed. Write it to the file.
+					try {
+						out.write(data, 4, data.length - 4);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					processedBlocks.add(data[2]*10+data[3]);
+				} 		
 
 				if (verboseMode) {
+					System.out.println("Block number: " + data[2] + data[3]);
 					System.out.println("From host: " + receivePacket.getAddress());
 					System.out.println("Host port: " + receivePacket.getPort());
 					System.out.println("Length: " + len);
@@ -314,7 +320,7 @@ public class TFTPClient {
 					}
 				}
 
-				byte[] ack = new byte[] { 0, 4, 0, 0 };
+				byte[] ack = new byte[] { 0, 4, data[2], data[3]};
 
 				sendPacket = new DatagramPacket(ack, ack.length, InetAddress.getByName(ipAddress), sendPort);
 
@@ -355,13 +361,13 @@ public class TFTPClient {
 	}
 
 	public void transferFiles(String filename, int sendPort) {
-		int blockNum = 0;
+		int blockNum = 1; // Data blocks start at one.
 		byte[] data = new byte[100];
 		receivePacket = new DatagramPacket(data, data.length);
 		byte[] dataBuffer = new byte[512];
 		try {
 			BufferedInputStream bis = new BufferedInputStream(new FileInputStream(filename));
-
+		
 			int bytesRead = 0;
 			while ((bytesRead = bis.read(dataBuffer, 0, 512)) != -1) {
 				byte[] msg = new byte[bytesRead + 4];
@@ -371,7 +377,6 @@ public class TFTPClient {
 				msg[3] = blockNumBytes(blockNum)[1];
 
 				System.arraycopy(dataBuffer, 0, msg, 4, bytesRead);
-				System.out.println("\n\nPORT IS: " + sendPort + "\n\n");
 				sendPacket = new DatagramPacket(msg, msg.length, InetAddress.getByName(ipAddress), sendPort);
 
 				try {
@@ -393,6 +398,7 @@ public class TFTPClient {
 				int len = receivePacket.getLength();
 				if (verboseMode) {
 					System.out.println("Client: Packet received:");
+					System.out.println("Block number: " + receivePacket.getData()[2] + receivePacket.getData()[3]);
 					System.out.println("From host: " + receivePacket.getAddress());
 					System.out.println("Host port: " + receivePacket.getPort());
 					System.out.println("Length: " + len);
@@ -422,8 +428,8 @@ public class TFTPClient {
 		byte[] blockNumArray = new byte[2];
 
 		// create the corresponding block number in 2 bytes
-		byte block1 = (byte) (blockNum / 256);
-		byte block2 = (byte) (blockNum % 256);
+		byte block1 = (byte) (blockNum / 10);
+		byte block2 = (byte) (blockNum % 10);
 		blockNumArray[0] = block1;
 		blockNumArray[1] = block2;
 		return blockNumArray;
