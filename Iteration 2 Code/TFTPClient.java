@@ -210,7 +210,7 @@ public class TFTPClient {
 					try {
 						// Block until a datagram is received via sendReceiveSocket.
 						sendReceiveSocket.receive(receivePacket);
-					} catch(InterruptedIOExcepttion ie) {
+					} catch(InterruptedIOException ie) {
 						System.out.println("Client Timed out. Resending packet.");
 						continue;
 					}catch (IOException e) {
@@ -251,7 +251,7 @@ public class TFTPClient {
 					receiveFiles(fileName, sendPort);
 				}
 				System.out.println();
-				receieved = false;//reset flag for receiving packet
+				received = false;//reset flag for receiving packet
 			}
 		}
 		System.out.println("Client is off");
@@ -400,7 +400,7 @@ public class TFTPClient {
 				try {
 					// Block until a datagram is received via sendReceiveSocket.
 					sendReceiveSocket.receive(receivePacket);
-				} catch(InterruptedIOExcpetion ie) {
+				} catch(InterruptedIOException ie) {
 					System.out.println("Client Timed out. Resending packet.");
 					continue;
 				} catch (IOException e) {

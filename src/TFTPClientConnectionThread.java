@@ -14,7 +14,8 @@ public class TFTPClientConnectionThread implements Runnable {
 	// responses for valid requests
 	public static final byte[] readResp = { 0, 3, 0, 1 };
 	public static final byte[] writeResp = { 0, 4, 0, 0 };
-
+	
+	
 	String fileName;
 
 	// File path DESKTOP
@@ -28,6 +29,7 @@ public class TFTPClientConnectionThread implements Runnable {
 			// on the local host machine. This socket will be used to
 			// receive UDP Datagram packets.
 			receiveSocket = new DatagramSocket(69);
+
 		} catch (SocketException se) {
 			se.printStackTrace();
 			System.exit(1);
@@ -172,6 +174,7 @@ public class TFTPClientConnectionThread implements Runnable {
 		private DatagramPacket receivePacket;
 		private DatagramPacket sendPacket;
 		private boolean verboseMode = false; // false for quiet and true for verbose
+		private static final int TIMEOUT = 1000;//Delay for timeout when waiting to receive file 
 
 		private Request request;
 
@@ -253,8 +256,9 @@ public class TFTPClientConnectionThread implements Runnable {
 
 		// write to file
 		public void receiveFiles(String fileName, int sendPort) {			
-
+			
 			try {
+				receiveSocket.setSoTimeout(TIMEOUT);
 				BufferedOutputStream out = new BufferedOutputStream( new FileOutputStream(serverDirectory + "\\" + fileName));
 				while (true) {
 					byte[] data = new byte[516];
