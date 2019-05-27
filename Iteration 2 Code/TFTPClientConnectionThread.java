@@ -43,7 +43,7 @@ public class TFTPClientConnectionThread implements Runnable {
 	/**
 	 * Closes the receive socket
 	 */
-	void closeSocket() {
+	public void closeSocket() {
 		receiveSocket.close();
 	}
 
@@ -52,119 +52,119 @@ public class TFTPClientConnectionThread implements Runnable {
 		
 		while (true) { // loop forever
 			if (doneProcessingRequest) {
-			byte[] data = new byte[100];
-			receivePacket = new DatagramPacket(data, data.length);
+				byte[] data = new byte[100];
+				receivePacket = new DatagramPacket(data, data.length);
 
-			System.out.println("------------------------------------------------------");
-			System.out.println("Type 'quit' to shutdown.");
-			try {
-				System.out
-						.println("Server (" + InetAddress.getLocalHost().getHostAddress() + ") : Waiting for packet.");
-			} catch (UnknownHostException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-
-			// Block until a datagram packet is received from receiveSocket.
-			try {
-				receiveSocket.receive(receivePacket);
-			} catch (SocketException exception) { // the socket has been closed for server shut down
-				System.out.println("Server is off");
-				break;
-			} catch (IOException e) {
-				e.printStackTrace();
-				System.exit(1);
-			}
-
-			// Process the received datagram.
-			len = receivePacket.getLength();
-			if (verboseMode) {
-				System.out.println("Server: Packet received:");
-				System.out.println("From host: " + receivePacket.getAddress());
-				System.out.println("Host port: " + receivePacket.getPort());
-				System.out.println("Length: " + len);
-				System.out.println("Containing: ");
-				// print the bytes
-				for (j = 0; j < len; j++) {
-					System.out.println("byte " + j + " " + data[j]);
-				}
-			} else {
-				System.out.println("Server: Packet received.");
-			}
-
-			// Form a String from the byte array.
-			String received = new String(data, 0, len);
-			fileName = received.split("\0")[1].substring(1);
-			System.out.println(fileName);
-
-			// If it's a read, send back DATA (03) block 1
-			// If it's a write, send back ACK (04) block 0
-			// Otherwise, ignore it
-			if (data[0] != 0)
-				request = Request.ERROR; // bad
-			else if (data[1] == 1)
-				request = Request.READ; // could be read
-			else if (data[1] == 2)
-				request = Request.WRITE; // could be write
-			else
-				request = Request.ERROR; // bad
-
-			if (request != Request.ERROR) { // check for filename
-				// search for next all 0 byte
-				for (j = 2; j < len; j++) {
-					if (data[j] == 0)
-						break;
-				}
-				if (j == len)
-					request = Request.ERROR; // didn't find a 0 byte
-				if (j == 2)
-					request = Request.ERROR; // filename is 0 bytes long
-				// otherwise, extract filename
-			}
-
-			if (request != Request.ERROR) { // check for mode
-				// search for next all 0 byte
-				for (k = j + 1; k < len; k++) {
-					if (data[k] == 0)
-						break;
-				}
-				if (k == len)
-					request = Request.ERROR; // didn't find a 0 byte
-				if (k == j + 1)
-					request = Request.ERROR; // mode is 0 bytes long
-			}
-
-			if (k != len - 1)
-				request = Request.ERROR; // other stuff at end of packet
-
-			if (request == Request.ERROR) { // it was invalid, close socket on port 69 (so things work properly next
-											// time) and quit
-				receiveSocket.close();
+				System.out.println("------------------------------------------------------");
+				System.out.println("Type 'quit' to shutdown.");
 				try {
-					throw new Exception("Not yet implemented");
-				} catch (Exception e) {
+					System.out
+					.println("Server (" + InetAddress.getLocalHost().getHostAddress() + ") : Waiting for packet.");
+				} catch (UnknownHostException e1) {
 					// TODO Auto-generated catch block
-					e.printStackTrace();
+					e1.printStackTrace();
 				}
-			}
-			// Create a response.
-			if (request == Request.READ) {
-				// create new thread for sending data
-				Runnable readReqThread = new TFTPsendThread(request, receivePacket, verboseMode);
-				new Thread(readReqThread).start();
 
-			} else if (request == Request.WRITE) {
-				// create new thread for sending data
-				Runnable writeReqThread = new TFTPsendThread(request, receivePacket, verboseMode);
-				new Thread(writeReqThread).start();
-			}
+				// Block until a datagram packet is received from receiveSocket.
+				try {
+					receiveSocket.receive(receivePacket);
+				} catch (SocketException exception) { // the socket has been closed for server shut down
+					System.out.println("Server is off");
+					break;
+				} catch (IOException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
 
-			/*
-			 * if (request == Request.ERROR) { // it was invalid, close socket on port 69
-			 * (so things work properly next time) and quit receiveSocket.close(); try {
-			 * throw new Exception("Not yet implemented"); } catch (Exception e) { // TODO
-			 * Auto-generated catch block e.printStackTrace(); } }
-			 */
+				// Process the received datagram.
+				len = receivePacket.getLength();
+				if (verboseMode) {
+					System.out.println("Server: Packet received:");
+					System.out.println("From host: " + receivePacket.getAddress());
+					System.out.println("Host port: " + receivePacket.getPort());
+					System.out.println("Length: " + len);
+					System.out.println("Containing: ");
+					// print the bytes
+					for (j = 0; j < len; j++) {
+						System.out.println("byte " + j + " " + data[j]);
+					}
+				} else {
+					System.out.println("Server: Packet received.");
+				}
+
+				// Form a String from the byte array.
+				String received = new String(data, 0, len);
+				fileName = received.split("\0")[1].substring(1);
+				System.out.println(fileName);
+
+				// If it's a read, send back DATA (03) block 1
+				// If it's a write, send back ACK (04) block 0
+				// Otherwise, ignore it
+				if (data[0] != 0)
+					request = Request.ERROR; // bad
+				else if (data[1] == 1)
+					request = Request.READ; // could be read
+				else if (data[1] == 2)
+					request = Request.WRITE; // could be write
+				else
+					request = Request.ERROR; // bad
+
+				if (request != Request.ERROR) { // check for filename
+					// search for next all 0 byte
+					for (j = 2; j < len; j++) {
+						if (data[j] == 0)
+							break;
+					}
+					if (j == len)
+						request = Request.ERROR; // didn't find a 0 byte
+					if (j == 2)
+						request = Request.ERROR; // filename is 0 bytes long
+					// otherwise, extract filename
+				}
+
+				if (request != Request.ERROR) { // check for mode
+					// search for next all 0 byte
+					for (k = j + 1; k < len; k++) {
+						if (data[k] == 0)
+							break;
+					}
+					if (k == len)
+						request = Request.ERROR; // didn't find a 0 byte
+					if (k == j + 1)
+						request = Request.ERROR; // mode is 0 bytes long
+				}
+
+				if (k != len - 1)
+					request = Request.ERROR; // other stuff at end of packet
+
+				if (request == Request.ERROR) { // it was invalid, close socket on port 69 (so things work properly next
+					// time) and quit
+					receiveSocket.close();
+					try {
+						throw new Exception("Not yet implemented");
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+				// Create a response.
+				if (request == Request.READ) {
+					// create new thread for sending data
+					Runnable readReqThread = new TFTPsendThread(request, receivePacket, verboseMode);
+					new Thread(readReqThread).start();
+
+				} else if (request == Request.WRITE) {
+					// create new thread for sending data
+					Runnable writeReqThread = new TFTPsendThread(request, receivePacket, verboseMode);
+					new Thread(writeReqThread).start();
+				}
+
+				/*
+				 * if (request == Request.ERROR) { // it was invalid, close socket on port 69
+				 * (so things work properly next time) and quit receiveSocket.close(); try {
+				 * throw new Exception("Not yet implemented"); } catch (Exception e) { // TODO
+				 * Auto-generated catch block e.printStackTrace(); } }
+				 */
 			}
 		} // end of loop
 	}

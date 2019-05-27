@@ -14,7 +14,7 @@ public class TFTPClient {
 	private static boolean verboseMode = false; // false for quiet and true for verbose
 	private static String ipAddress = "";
 	// private static String ipAddress = "192.168.0.21";
-	private static String clientDirectory = "C:\\Alexei's Stuff\\Carleton University";
+	private static String clientDirectory = "M:\\SYSC3303_Project";
 	// private static String clientDirectory = "C:\\Users\\Sherry
 	// Wang\\Documents\\GitHub\\SYSC3303_Project\\src";
 	private static boolean finishedRequest = false;
@@ -160,10 +160,10 @@ public class TFTPClient {
 			// 69 - the destination port number on the destination host.
 			try {
 
-				sendPacket = new DatagramPacket(msg, len, InetAddress.getLocalHost(), sendPort);
+				//sendPacket = new DatagramPacket(msg, len, InetAddress.getLocalHost(), sendPort);
 				// */
-				// sendPacket = new DatagramPacket(msg, len, InetAddress.getByName(ipAddress),
-				// sendPort);
+				sendPacket = new DatagramPacket(msg, len, InetAddress.getByName(ipAddress),
+				 sendPort);
 			} catch (UnknownHostException e) {
 				e.printStackTrace();
 				System.exit(1);
@@ -233,12 +233,12 @@ public class TFTPClient {
 				byte[] readAck = new byte[] { 0, 3, 0, 1 };
 				byte[] writeAck = new byte[] { 0, 4, 0, 0 };
 				if (request == RequestType.READ) {
-					ackVerified = Arrays.equals(readAck, data);
+					ackVerified = Arrays.equals(readAck, Arrays.copyOfRange(data, 0, 3)); //NOT TESTED YET
 				} else {
-					ackVerified = Arrays.equals(writeAck, data);
+					ackVerified = Arrays.equals(writeAck, Arrays.copyOfRange(data, 0, 3)); //NOT TESTED YET
 				}
 
-				//if (!ackVerified) // re-send request
+				//if (!ackVerified) //not implemented yet
 				if (request == RequestType.WRITE) {
 					transferFiles(fileName, sendPort);
 				}
@@ -369,6 +369,7 @@ public class TFTPClient {
 			BufferedInputStream bis = new BufferedInputStream(new FileInputStream(filename));
 		
 			int bytesRead = 0;
+
 			while ((bytesRead = bis.read(dataBuffer, 0, 512)) != -1) {
 				byte[] msg = new byte[bytesRead + 4];
 				msg[0] = 0;
