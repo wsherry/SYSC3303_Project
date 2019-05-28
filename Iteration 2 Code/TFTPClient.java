@@ -14,7 +14,7 @@ public class TFTPClient {
 	private static boolean verboseMode = false; // false for quiet and true for verbose
 	private static String ipAddress = "";
 	// private static String ipAddress = "192.168.0.21";
-	private static String clientDirectory = "M:\\SYSC3303_Project";
+	private static String clientDirectory = "C:\\Alexei's Stuff\\Carleton University";
 	// private static String clientDirectory = "C:\\Users\\Sherry
 	// Wang\\Documents\\GitHub\\SYSC3303_Project\\src";
 	private static boolean finishedRequest = false;
@@ -229,6 +229,7 @@ public class TFTPClient {
 					System.out.println("Client: Packet received.");
 				}
 
+				// TODO The read and write ACKs will have packet numbers at the end that will correspond to the data block being ACKed and not 01 and 00.
 				boolean ackVerified = false;
 				byte[] readAck = new byte[] { 0, 3, 0, 1 };
 				byte[] writeAck = new byte[] { 0, 4, 0, 0 };

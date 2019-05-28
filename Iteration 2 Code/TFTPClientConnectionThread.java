@@ -22,7 +22,11 @@ public class TFTPClientConnectionThread implements Runnable {
 	// TODO Must be changed based on system
 	
 	private boolean doneProcessingRequest = true;
-
+	
+	// List to keep track of whom the server is already talking to.
+	// Used to handle duplicate packets from the same source.
+	private ArrayList<String> establishedCommunications = new ArrayList<String>(); 
+	
 	private String serverDirectory;
 
 	public TFTPClientConnectionThread(boolean verboseMode, String serverDirectory ) {
@@ -76,7 +80,7 @@ public class TFTPClientConnectionThread implements Runnable {
 					e.printStackTrace();
 					System.exit(1);
 				}
-
+				
 				// Process the received datagram.
 				len = receivePacket.getLength();
 				if (verboseMode) {
@@ -148,6 +152,9 @@ public class TFTPClientConnectionThread implements Runnable {
 						e.printStackTrace();
 					}
 				}
+				
+				establishedCommunications.add(receivePacket.getSocketAddress().toString());
+				
 				// Create a response.
 				if (request == Request.READ) {
 					// create new thread for sending data
@@ -275,6 +282,12 @@ public class TFTPClientConnectionThread implements Runnable {
 						System.exit(1);
 					}
 
+					// Check if the received packet is a duplicate read or write request from a socket and port that is being handled. If so, ignore the packet and continue waiting.
+					if (establishedCommunications.contains(receivePacket.getSocketAddress().toString()) && (receivePacket.getData()[0] == 0 && receivePacket.getData()[1] == 2)) {
+						System.out.println("Server: Received a duplicate WRQ packet. Ignoring it.");
+						continue;
+						
+					}
 					// Process the received datagram.
 					len = receivePacket.getLength();
 					data = receivePacket.getData();
@@ -335,6 +348,7 @@ public class TFTPClientConnectionThread implements Runnable {
 					if (len < 516) {
 						System.out.println("Received all data packets");
 						doneProcessingRequest = true;
+						establishedCommunications.remove(receivePacket.getSocketAddress().toString());
 						try {
 							out.close();
 						} catch (IOException e) {

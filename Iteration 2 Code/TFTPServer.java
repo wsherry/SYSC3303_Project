@@ -10,7 +10,7 @@ import java.util.Scanner;
 public class TFTPServer {
    // UDP datagram packets and sockets used to send / receive
    private static boolean verboseMode = false; //false for quiet and true for verbose
-   private static String serverDirectory = "C:\\Users\\alanlin.LABS\\Desktop";
+   private static String serverDirectory = "C:\\Alexei's Stuff\\Carleton University\\Server Test Folder";
    
    /*public TFTPServer()
    {

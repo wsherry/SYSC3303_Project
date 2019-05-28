@@ -111,8 +111,28 @@ public class TFTPSim {
         		 // TODO Auto-generated catch packetCount
         		 e.printStackTrace();
         	 }
-         } else if (mode == Mode.DUPLICATE) {
-         	//TO BE COMPLETED
+         } else if (mode == Mode.DUPLICATE && packetCount == packetNumber && receivedType == packetType) {
+        	try {
+ 				sendPacket = new DatagramPacket(data, len, InetAddress.getLocalHost(), 69);
+ 			} catch (UnknownHostException e1) {
+ 				e1.printStackTrace();
+ 			}
+ 	        len = sendPacket.getLength();
+ 	        System.out.println("\nSimulator: sending duplicate data packet from client to server.");
+ 	        if (verboseMode) {
+ 	        	 System.out.println("Packet number: " + packetCount);
+ 	        	 System.out.println("Packet type: " + packetType);
+ 	        	 System.out.println("To host: " + sendPacket.getAddress());
+ 	        	 System.out.println("Destination host port: " + sendPacket.getPort());
+ 	        }
+ 	
+ 	        // Send the duplicate datagram packet to the server via the send/receive socket.
+ 	        try {
+ 	            sendReceiveSocket.send(sendPacket);
+ 	        } catch (IOException e) {
+ 	            e.printStackTrace();
+ 	            System.exit(1);
+ 	        }
          }
          
          if (mode == Mode.LOSS && packetCount == packetNumber && receivedType == packetType) {
@@ -207,9 +227,29 @@ public class TFTPSim {
         		 // TODO Auto-generated catch packetCount
         		 e.printStackTrace();
         	 }
-         } else if (mode == Mode.DUPLICATE) {
-         	//TO BE COMPLETED
-         }        
+         } else if (mode == Mode.DUPLICATE && packetCount == packetNumber && receivedType == packetType) {
+        	 try {
+  				sendPacket = new DatagramPacket(data, len, InetAddress.getLocalHost(), 69);
+  			} catch (UnknownHostException e1) {
+  				e1.printStackTrace();
+  			}
+  	        len = sendPacket.getLength();
+  	        System.out.println("\nSimulator: sending duplicate data packet from server to client.");
+  	        if (verboseMode) {
+  	        	 System.out.println("Packet number: " + packetCount);
+  	        	 System.out.println("Packet type: " + receivedType);
+  	        	 System.out.println("To host: " + sendPacket.getAddress());
+  	        	 System.out.println("Destination host port: " + sendPacket.getPort());
+  	        }
+  	
+  	        // Send the duplicate datagram packet to the server via the send/receive socket.
+  	        try {
+  	            sendReceiveSocket.send(sendPacket);
+  	        } catch (IOException e) {
+  	            e.printStackTrace();
+  	            System.exit(1);
+  	        }
+          }
          
          //Lose the packet if selected
          if (mode == Mode.LOSS && packetCount == packetNumber && receivedType == packetType) {
@@ -312,14 +352,20 @@ public class TFTPSim {
 
 	    	//User inputs to specify which packet number to lose/delay/duplicate
 			while (invalid) {
-				System.out.print("\nWhich " + packetType + " packet to " + mode + " (" + packetType + " packet number): ");
-				input = sc.nextLine();
-	   		   	try {
-	       		   	packetNumber = Integer.valueOf(input);
-	       		   	invalid = false;
-	   		   	} catch (NumberFormatException e) {
-	   		   		System.out.println("Invalid value entered! Please enter a NUMBER.");
-	   		   	}		
+				// If the request is to duplicate a read or write request then, according to our logic, it can only be the 1st packet.
+				if ((packetType == Type.RRQ || packetType == Type.WRQ) && mode == Mode.DUPLICATE) { 
+					packetNumber = 1;
+					invalid = false;
+				} else {
+					System.out.print("\nWhich " + packetType + " packet to " + mode + " (" + packetType + " packet number): ");
+					input = sc.nextLine();
+		   		   	try {
+		       		   	packetNumber = Integer.valueOf(input);
+		       		   	invalid = false;
+		   		   	} catch (NumberFormatException e) {
+		   		   		System.out.println("Invalid value entered! Please enter a NUMBER.");
+		   		   	}
+				}
 			}
 			
 			System.out.println(packetType + " number " + packetNumber + " will be delayed");
