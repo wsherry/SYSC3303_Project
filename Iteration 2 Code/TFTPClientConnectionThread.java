@@ -51,6 +51,7 @@ public class TFTPClientConnectionThread implements Runnable {
 		int len, j = 0, k = 0;
 		
 		while (true) { // loop forever
+			System.out.print("");
 			if (doneProcessingRequest) {
 				byte[] data = new byte[100];
 				receivePacket = new DatagramPacket(data, data.length);
@@ -333,7 +334,7 @@ public class TFTPClientConnectionThread implements Runnable {
 					
 					if (len < 516) {
 						System.out.println("Received all data packets");
-						
+						doneProcessingRequest = true;
 						try {
 							out.close();
 						} catch (IOException e) {
@@ -343,7 +344,6 @@ public class TFTPClientConnectionThread implements Runnable {
 						break;
 					}
 				}
-				doneProcessingRequest = true;
 			} catch (IOException e2) {
 				// TODO Auto-generated catch block
 				e2.printStackTrace();
