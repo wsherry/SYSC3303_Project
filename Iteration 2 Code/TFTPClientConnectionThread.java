@@ -268,6 +268,7 @@ public class TFTPClientConnectionThread implements Runnable {
 
 		// write to file
 		public void receiveFiles(String fileName, int sendPort) {			
+			ArrayList<Integer> processedDataBlocks = new ArrayList<>();
 			
 			try {
 				receiveSocket.setSoTimeout(TIMEOUT);
@@ -294,7 +295,7 @@ public class TFTPClientConnectionThread implements Runnable {
 						System.exit(1);
 					}
 
-					// Check if the received packet is a duplicate read or write request from a socket and port that is being handled. If so, ignore the packet and continue waiting.
+					// Check if the received packet is a duplicate write request from a socket and port that is being handled. If so, ignore the packet and continue waiting.
 					if (establishedCommunications.contains(receivePacket.getSocketAddress().toString()) && (receivePacket.getData()[0] == 0 && receivePacket.getData()[1] == 2)) {
 						System.out.println("Server: Received a duplicate WRQ packet. Ignoring it.");
 						continue;
@@ -305,11 +306,20 @@ public class TFTPClientConnectionThread implements Runnable {
 					data = receivePacket.getData();
 					System.out.println("Server: Data Packet received.");
 
-					try {
-						out.write(data, 4, data.length - 4);
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+					// Check if it's a duplicate packet. If it is, we still want to send an ACK but not rewrite to the file.
+					if (!processedDataBlocks.contains(data[2]*10+data[3])) {
+						// This block number has not been processed. Write it to the file.
+						try {
+							out.write(data, 4, data.length - 4);
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+						processedDataBlocks.add(data[2]*10+data[3]);
+					}  else {
+						if (verboseMode) {
+							System.out.println("Server: Duplicate data packet received. Ignoring it by not writing it again.");
+						}
 					}
 
 					if (verboseMode) {
@@ -322,7 +332,7 @@ public class TFTPClientConnectionThread implements Runnable {
 						}
 					}
 					
-					byte[] ack = new byte[] { 0, 4, 0, 0 };
+					byte[] ack = new byte[] { 0, 4, data[2], data[3] };
 					
 					sendPacket = new DatagramPacket(ack, ack.length, receivePacket.getAddress(),
 							receivePacket.getPort());
@@ -382,9 +392,10 @@ public class TFTPClientConnectionThread implements Runnable {
 
 		// read files
 		public void transferFiles(String filename, int sendPort, DatagramPacket receivePacket) {
+		   ArrayList<Integer> processedACKBlocks = new ArrayList<>();
 		   int blockNum = 0;
 		   byte[] data = new byte[100];
-	       receivePacket.setData(data, 0, data.length);;
+	       	   receivePacket.setData(data, 0, data.length);;
 		   byte[] dataBuffer = new byte[512];
 		   try {
 			   receiveSocket.setSoTimeout(TIMEOUT);
@@ -437,6 +448,22 @@ public class TFTPClientConnectionThread implements Runnable {
 				           e.printStackTrace();
 				           System.exit(1);
 				        }
+
+					// Check if the received packet is a duplicate read request from a socket and port that is being handled. If so, ignore the packet and continue waiting.
+					if (establishedCommunications.contains(receivePacket.getSocketAddress().toString()) && (receivePacket.getData()[0] == 0 && receivePacket.getData()[1] == 1)) {
+						System.out.println("Server: Received a duplicate RRQ packet. Ignoring it.");
+						continue;			
+					}
+					
+					// Check if the received packet is a duplicate ACK. If it is, then we should not be re-sending the N data packet for the ACK. Sorcerer's Apprentice Bug. 
+					if (!processedACKBlocks.contains(data[2]*10+data[3])) {
+						processedACKBlocks.add(data[2]*10+data[3]);
+					}  else {
+						if (verboseMode) {
+							System.out.println("Server: Duplicate ACK data packet received. Ignoring it by not re-sending data block N and waiting for the next datablock");
+						}
+					}
+
 					   int len = receivePacket.getLength();
 					   
 						if (verboseMode) {
@@ -458,6 +485,8 @@ public class TFTPClientConnectionThread implements Runnable {
 					blockNum++;
 				}
 				System.out.println("Finished Read");
+				doneProcessingRequest = true;
+				establishedCommunications.remove(receivePacket.getSocketAddress().toString());
 				bis.close();
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
