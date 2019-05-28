@@ -1,7 +1,6 @@
 import java.io.*;
 import java.net.*;
-import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.*;
 
 //import TFTPClient.RequestType;
 
@@ -15,7 +14,8 @@ public class TFTPClientConnectionThread implements Runnable {
 	// responses for valid requests
 	public static final byte[] readResp = { 0, 3, 0, 1 };
 	public static final byte[] writeResp = { 0, 4, 0, 0 };
-
+	
+	
 	String fileName;
 
 	// File path DESKTOP
@@ -35,6 +35,7 @@ public class TFTPClientConnectionThread implements Runnable {
 			// on the local host machine. This socket will be used to
 			// receive UDP Datagram packets.
 			receiveSocket = new DatagramSocket(69);
+
 		} catch (SocketException se) {
 			se.printStackTrace();
 			System.exit(1);
@@ -55,6 +56,7 @@ public class TFTPClientConnectionThread implements Runnable {
 		int len, j = 0, k = 0;
 		
 		while (true) { // loop forever
+
 			System.out.print("");
 			if (doneProcessingRequest) {
 				byte[] data = new byte[100];
@@ -72,6 +74,7 @@ public class TFTPClientConnectionThread implements Runnable {
 
 				// Block until a datagram packet is received from receiveSocket.
 				try {
+					receiveSocket.setSoTimeout(0);
 					receiveSocket.receive(receivePacket);
 				} catch (SocketException exception) { // the socket has been closed for server shut down
 					System.out.println("Server is off");
@@ -166,7 +169,6 @@ public class TFTPClientConnectionThread implements Runnable {
 					Runnable writeReqThread = new TFTPsendThread(request, receivePacket, verboseMode);
 					new Thread(writeReqThread).start();
 				}
-
 				/*
 				 * if (request == Request.ERROR) { // it was invalid, close socket on port 69
 				 * (so things work properly next time) and quit receiveSocket.close(); try {
@@ -177,13 +179,14 @@ public class TFTPClientConnectionThread implements Runnable {
 		} // end of loop
 	}
 
+
 	public class TFTPsendThread implements Runnable {
 
 		private DatagramSocket sendSocket;
 		private DatagramPacket receivePacket;
 		private DatagramPacket sendPacket;
-		private boolean verboseMode = false; // false for quiet and true for verbose\
-		private static final int TIMEOUT = 1000;//Delay for timeout when waiting to receive file 
+		private boolean verboseMode = false; // false for quiet and true for verbose
+		private static final int TIMEOUT = 1000;
 
 		private Request request;
 
@@ -265,7 +268,7 @@ public class TFTPClientConnectionThread implements Runnable {
 
 		// write to file
 		public void receiveFiles(String fileName, int sendPort) {			
-			ArrayList<Integer> processedDataBlocks = new ArrayList<>();
+			
 			try {
 				receiveSocket.setSoTimeout(TIMEOUT);
 				BufferedOutputStream out = new BufferedOutputStream( new FileOutputStream(serverDirectory + "\\" + fileName));
@@ -277,14 +280,21 @@ public class TFTPClientConnectionThread implements Runnable {
 					System.out.println("Server: Waiting for data packet.");
 
 					try {
-						// Block until a datagram is received via sendReceiveSocket.
+						// Block until a datagram is received via sendReceiveSocket, or until
+						// idle for exceptional amount of time
+						receiveSocket.setSoTimeout(300000);
 						receiveSocket.receive(receivePacket);
+						receiveSocket.setSoTimeout(TIMEOUT);
+					} catch(InterruptedIOException ie) {
+						//NOT IMPLEMENTED. Behind current version, might not work with changes
+						System.out.println("Server idle timeout. Closing connection.");
+						break;
 					} catch (IOException e) {
 						e.printStackTrace();
 						System.exit(1);
 					}
 
-					// Check if the received packet is a duplicate write request from a socket and port that is being handled. If so, ignore the packet and continue waiting.
+					// Check if the received packet is a duplicate read or write request from a socket and port that is being handled. If so, ignore the packet and continue waiting.
 					if (establishedCommunications.contains(receivePacket.getSocketAddress().toString()) && (receivePacket.getData()[0] == 0 && receivePacket.getData()[1] == 2)) {
 						System.out.println("Server: Received a duplicate WRQ packet. Ignoring it.");
 						continue;
@@ -295,24 +305,14 @@ public class TFTPClientConnectionThread implements Runnable {
 					data = receivePacket.getData();
 					System.out.println("Server: Data Packet received.");
 
-					// Check if it's a duplicate packet. If it is, we still want to send an ACK but not rewrite to the file.
-					if (!processedDataBlocks.contains(data[2]*10+data[3])) {
-						// This block number has not been processed. Write it to the file.
-						try {
-							out.write(data, 4, data.length - 4);
-						} catch (IOException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-						processedDataBlocks.add(data[2]*10+data[3]);
-					}  else {
-						if (verboseMode) {
-							System.out.println("Server: Duplicate data packet received. Ignoring it by not writing it again.");
-						}
+					try {
+						out.write(data, 4, data.length - 4);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
-					
+
 					if (verboseMode) {
-						System.out.println("Block number: " + data[2] + data[3]);
 						System.out.println("From host: " + receivePacket.getAddress());
 						System.out.println("Host port: " + receivePacket.getPort());
 						System.out.println("Length: " + len);
@@ -322,7 +322,7 @@ public class TFTPClientConnectionThread implements Runnable {
 						}
 					}
 					
-					byte[] ack = new byte[] { 0, 4, data[2], data[3]};
+					byte[] ack = new byte[] { 0, 4, 0, 0 };
 					
 					sendPacket = new DatagramPacket(ack, ack.length, receivePacket.getAddress(),
 							receivePacket.getPort());
@@ -382,14 +382,14 @@ public class TFTPClientConnectionThread implements Runnable {
 
 		// read files
 		public void transferFiles(String filename, int sendPort, DatagramPacket receivePacket) {
-			ArrayList<Integer> processedACKBlocks = new ArrayList<>();
 		   int blockNum = 0;
 		   byte[] data = new byte[100];
 	       receivePacket.setData(data, 0, data.length);;
 		   byte[] dataBuffer = new byte[512];
 		   try {
+			   receiveSocket.setSoTimeout(TIMEOUT);
 			   BufferedInputStream bis = new BufferedInputStream(new FileInputStream(serverDirectory + "\\" + filename));
-				System.out.println(serverDirectory + "\\" + filename);
+			   System.out.println(serverDirectory + "\\" + filename);
 
 				System.out.println("Within Transfer files (for reading) server");
 				int bytesRead = 0;
@@ -428,58 +428,36 @@ public class TFTPClientConnectionThread implements Runnable {
 					System.out.println("Server: Waiting for packet.");
 
 					try {
-						// Block until a datagram is received via sendReceiveSocket.sendReceiveSocket, or until
-						// idle for exceptional amount of time
-						receiveSocket.setSoTimeout(300000);
-				        receiveSocket.receive(receivePacket);
-				        receiveSocket.setSoTimeout(TIMEOUT);
-					} catch(InterruptedIOException ie) {
-						//NOT IMPLEMENTED. Behind current version, might not work with changes
-						System.out.println("Server idle timeout. Closing connection.");
-						break;
-					} catch(IOException e) {
-				        e.printStackTrace();
-				        System.exit(1);
-					}
-					
-					// Check if the received packet is a duplicate read request from a socket and port that is being handled. If so, ignore the packet and continue waiting.
-					if (establishedCommunications.contains(receivePacket.getSocketAddress().toString()) && (receivePacket.getData()[0] == 0 && receivePacket.getData()[1] == 1)) {
-						System.out.println("Server: Received a duplicate RRQ packet. Ignoring it.");
-						continue;			
-					}
-					
-					// Check if the received packet is a duplicate ACK. If it is, then we should not be re-sending the N data packet for the ACK. Sorcerer's Apprentice Bug. 
-					if (!processedACKBlocks.contains(data[2]*10+data[3])) {
-						processedACKBlocks.add(data[2]*10+data[3]);
-					}  else {
-						if (verboseMode) {
-							System.out.println("Server: Duplicate ACK data packet received. Ignoring it by not re-sending data block N and waiting for the next datablock");
-						}
-					}
-								
-					int len = receivePacket.getLength();
+				           // Block until a datagram is received via sendReceiveSocket.
+				           receiveSocket.receive(receivePacket);
+				        } catch(InterruptedIOException ie) {
+				        	System.out.println("Server timeout. Resending packet");
+				        	continue;
+						} catch(IOException e) {
+				           e.printStackTrace();
+				           System.exit(1);
+				        }
+					   int len = receivePacket.getLength();
 					   
-					if (verboseMode) {
-						System.out.println("Client: Packet received:");
-						System.out.println("From host: " + receivePacket.getAddress());
-						System.out.println("Host port: " + receivePacket.getPort());
-						System.out.println("Length: " + len);
-						System.out.println("Containing: ");
-						for (int j = 0; j < len; j++) {
-							System.out.println("byte " + j + " " + data[j]);
+						if (verboseMode) {
+							System.out.println("Client: Packet received:");
+							System.out.println("From host: " + receivePacket.getAddress());
+							System.out.println("Host port: " + receivePacket.getPort());
+							System.out.println("Length: " + len);
+							System.out.println("Containing: ");
+							for (int j = 0; j < len; j++) {
+								System.out.println("byte " + j + " " + data[j]);
+							}
+						} else {
+							System.out.println("Server: Packet received.");
 						}
-					} else {
-						System.out.println("Server: Packet received.");
-					}
 
-					if (sendPacket.getLength() < 516) {
-						System.out.println("Server: Last packet sent.");
-					}
+						if (sendPacket.getLength() < 516) {
+							System.out.println("Server: Last packet sent.");
+						}
 					blockNum++;
 				}
 				System.out.println("Finished Read");
-				doneProcessingRequest = true;
-				establishedCommunications.remove(receivePacket.getSocketAddress().toString());
 				bis.close();
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
