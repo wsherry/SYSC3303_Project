@@ -19,7 +19,8 @@ public class TFTPClient {
 	// Wang\\Documents\\GitHub\\SYSC3303_Project\\src";
 	private static boolean finishedRequest = false;
 	private boolean running = true;
-
+	private static final int TIMEOUT = 1000; //Delay for timeout when waiting to receive file 
+	
 	// we can run in normal (send directly to server) or test
 	// (send to simulator) mode
 	public static enum Mode {
@@ -40,6 +41,8 @@ public class TFTPClient {
 			// port on the local host machine. This socket will be used to
 			// send and receive UDP Datagram packets.
 			sendReceiveSocket = new DatagramSocket();
+			//Set socket timeout to allow for retransmission
+			sendReceiveSocket.setSoTimeout(TIMEOUT);
 		} catch (SocketException se) { // Can't create the socket.
 			se.printStackTrace();
 			System.exit(1);
@@ -161,10 +164,10 @@ public class TFTPClient {
 			// 69 - the destination port number on the destination host.
 			try {
 
-				sendPacket = new DatagramPacket(msg, len, InetAddress.getLocalHost(), sendPort);
+				//sendPacket = new DatagramPacket(msg, len, InetAddress.getLocalHost(), sendPort);
 				// */
-				// sendPacket = new DatagramPacket(msg, len, InetAddress.getByName(ipAddress),
-				// sendPort);
+				 sendPacket = new DatagramPacket(msg, len, InetAddress.getByName(ipAddress),
+				 sendPort);
 			} catch (UnknownHostException e) {
 				e.printStackTrace();
 				System.exit(1);
@@ -188,7 +191,11 @@ public class TFTPClient {
 			String sending = new String(msg, 0, len);
 			System.out.println(sending);
 
+			//Append the directory to the beginning of the file
+			fileName = clientDirectory + "//" + fileName;
+			
 			// Send the datagram packet to the server via the send/receive socket.
+			received = false;//reset flag for receiving packet
 			while(!received){//set to true when client receives response to read/write request
 				try {
 					sendReceiveSocket.send(sendPacket);
@@ -204,7 +211,7 @@ public class TFTPClient {
 	
 				data = new byte[100];
 				receivePacket = new DatagramPacket(data, data.length);
-				fileName = clientDirectory + "//" + fileName;
+				
 				if (request != RequestType.READ) {
 					System.out.println("Client: Waiting for packet.");
 					try {
@@ -249,9 +256,11 @@ public class TFTPClient {
 					}
 				} else {
 					receiveFiles(fileName, sendPort);
+					if(finishedRequest) {
+						break;
+					}
 				}
 				System.out.println();
-				received = false;//reset flag for receiving packet
 			}
 		}
 		System.out.println("Client is off");
@@ -281,6 +290,10 @@ public class TFTPClient {
 
 	public void receiveFiles(String fileName, int sendPort) {
 		ArrayList<Integer> processedBlocks = new ArrayList<>();
+		
+		//used to differentiate between read request response and regular file transfer
+		boolean requestResponse = true;
+		
 		try {
 			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(fileName));
 
@@ -290,15 +303,29 @@ public class TFTPClient {
 				int len = receivePacket.getLength();
 
 				System.out.println("Client: Waiting for data packet.");
-
-				try {
-					// Block until a datagram is received via sendReceiveSocket.
-					sendReceiveSocket.receive(receivePacket);
-				//}catch(InterrupttedIOException) {
-				//	System.out.println("Client ");
-				}catch (IOException e) {
-					e.printStackTrace();
-					System.exit(1);
+				if(requestResponse) {
+					try {
+						// Block until a datagram is received via sendReceiveSocket.
+						sendReceiveSocket.receive(receivePacket);
+					}catch(InterruptedIOException io) {
+						System.out.println("Client timed out. resending request.");
+						break;
+					}catch (IOException e) {
+						e.printStackTrace();
+						System.exit(1);
+					}
+				} else {
+					try {
+						// Block until a datagram is received via sendReceiveSocket.
+						sendReceiveSocket.setSoTimeout(300000);
+						sendReceiveSocket.receive(receivePacket);
+						sendReceiveSocket.setSoTimeout(TIMEOUT);
+					}catch(InterruptedIOException io) {
+						System.out.println("Client has exceeded idle time. Cancelling transfer.");
+					}catch (IOException e) {
+						e.printStackTrace();
+						System.exit(1);
+					}
 				}
 				// Process the received datagram.
 				len = receivePacket.getLength();
@@ -354,6 +381,7 @@ public class TFTPClient {
 				}
 				if (len < 516) {
 					System.out.println("Received all data packets");
+					finishedRequest = true;
 					try {
 						out.close();
 					} catch (IOException e) {
@@ -425,6 +453,7 @@ public class TFTPClient {
 
 				if (sendPacket.getLength() < 516) {
 					System.out.println("Client: Last packet sent.");
+					finishedRequest = true;
 				}
 
 			}
