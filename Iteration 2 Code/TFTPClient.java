@@ -344,7 +344,11 @@ public class TFTPClient {
 						e.printStackTrace();
 					}
 					processedBlocks.add(data[2]*10+data[3]);
-				} 		
+				} else {					
+					if (verboseMode) {		
+						System.out.println("Client: Duplicate data packet received. Ignoring it by not writing it again.");		
+					}		
+				}		
 
 				if (verboseMode) {
 					System.out.println("Block number: " + data[2] + data[3]);
@@ -399,6 +403,7 @@ public class TFTPClient {
 	}
 
 	public void transferFiles(String filename, int sendPort) {
+		ArrayList<Integer> processedACKBlocks = new ArrayList<>();
 		int blockNum = 1; // Data blocks start at one.
 		byte[] data = new byte[100];
 		receivePacket = new DatagramPacket(data, data.length);
@@ -437,6 +442,15 @@ public class TFTPClient {
 					e.printStackTrace();
 					System.exit(1);
 				}
+				// Check if the received packet is a duplicate ACK. If it is, then we should not be re-sending the next N+1 data packet for the ACK. Sorcerer's Apprentice Bug. 		
+				if (!processedACKBlocks.contains(data[2]*10+data[3])) {		
+					processedACKBlocks.add(data[2]*10+data[3]);		
+				}  else {		
+					if (verboseMode) {		
+						System.out.println("Client: Duplicate ACK data packet received. Ignoring it by not re-sending data block N and waiting for the next datablock");		
+					}		
+				}
+
 				int len = receivePacket.getLength();
 				if (verboseMode) {
 					System.out.println("Client: Packet received:");

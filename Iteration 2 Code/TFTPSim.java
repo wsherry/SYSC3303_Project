@@ -118,7 +118,7 @@ public class TFTPSim {
  				e1.printStackTrace();
  			}
  	        len = sendPacket.getLength();
- 	        System.out.println("\nSimulator: sending duplicate data packet from client to server.");
+ 	        System.out.println("\nSimulator: sending duplicate packet from client to server.");
  	        if (verboseMode) {
  	        	 System.out.println("Packet number: " + packetCount);
  	        	 System.out.println("Packet type: " + packetType);
@@ -234,7 +234,7 @@ public class TFTPSim {
   				e1.printStackTrace();
   			}
   	        len = sendPacket.getLength();
-  	        System.out.println("\nSimulator: sending duplicate data packet from server to client.");
+  	        System.out.println("\nSimulator: sending duplicate packet from server to client.");
   	        if (verboseMode) {
   	        	 System.out.println("Packet number: " + packetCount);
   	        	 System.out.println("Packet type: " + receivedType);
