@@ -166,7 +166,8 @@ public class TFTPClient {
 
 				//sendPacket = new DatagramPacket(msg, len, InetAddress.getLocalHost(), sendPort);
 				// */
-				 sendPacket = new DatagramPacket(msg, len, InetAddress.getByName(ipAddress),
+				sendPacket = new DatagramPacket(msg, len, InetAddress.getByName(ipAddress),
+
 				 sendPort);
 			} catch (UnknownHostException e) {
 				e.printStackTrace();
@@ -406,6 +407,7 @@ public class TFTPClient {
 			BufferedInputStream bis = new BufferedInputStream(new FileInputStream(filename));
 		
 			int bytesRead = 0;
+
 			while ((bytesRead = bis.read(dataBuffer, 0, 512)) != -1) {
 				byte[] msg = new byte[bytesRead + 4];
 				msg[0] = 0;

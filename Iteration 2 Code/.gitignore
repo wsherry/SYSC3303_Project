@@ -6,3 +6,5 @@
 /TFTPClientConnectionThread.class
 /TFTPServer.class
 /TFTPSim.class
+/TFTPSim$Mode.class
+/TFTPSim$Type.class
