@@ -535,7 +535,7 @@ public class TFTPClient {
 				"\nCurrent client directory is: " + (clientDirectory.equals("") ? "undefined" : clientDirectory));
 		// option to set the file directory.
 		// User must input file directory at the first launch.
-		// Once anhr file directory has been set, the user can enter nothing to keep it
+		// Once a file directory has been set, the user can enter nothing to keep it
 		// unchanged.
 		while (input.equals("")) {
 			System.out.println("Enter the client of directory or nothing to keep the directory unchanged: ");
