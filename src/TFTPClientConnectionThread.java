@@ -14,7 +14,8 @@ public class TFTPClientConnectionThread implements Runnable {
 	// responses for valid requests
 	public static final byte[] readResp = { 0, 3, 0, 1 };
 	public static final byte[] writeResp = { 0, 4, 0, 0 };
-
+	
+	
 	String fileName;
 
 	// File path DESKTOP
@@ -28,6 +29,7 @@ public class TFTPClientConnectionThread implements Runnable {
 			// on the local host machine. This socket will be used to
 			// receive UDP Datagram packets.
 			receiveSocket = new DatagramSocket(69);
+
 		} catch (SocketException se) {
 			se.printStackTrace();
 			System.exit(1);
@@ -172,6 +174,7 @@ public class TFTPClientConnectionThread implements Runnable {
 		private DatagramPacket receivePacket;
 		private DatagramPacket sendPacket;
 		private boolean verboseMode = false; // false for quiet and true for verbose
+		private static final int TIMEOUT = 1000;//Delay for timeout when waiting to receive file 
 
 		private Request request;
 
@@ -253,8 +256,9 @@ public class TFTPClientConnectionThread implements Runnable {
 
 		// write to file
 		public void receiveFiles(String fileName, int sendPort) {			
-
+			
 			try {
+				receiveSocket.setSoTimeout(TIMEOUT);
 				BufferedOutputStream out = new BufferedOutputStream( new FileOutputStream(serverDirectory + "\\" + fileName));
 				while (true) {
 					byte[] data = new byte[516];
@@ -264,8 +268,15 @@ public class TFTPClientConnectionThread implements Runnable {
 					System.out.println("Server: Waiting for data packet.");
 
 					try {
-						// Block until a datagram is received via sendReceiveSocket.
+						// Block until a datagram is received via sendReceiveSocket, or until
+						// idle for exceptional amount of time
+						receiveSocket.setSoTimeout(300000);
 						receiveSocket.receive(receivePacket);
+						receiveSocket.setSoTimeout(TIMEOUT);
+					} catch(InterruptedIOException ie) {
+						//NOT IMPLEMENTED. Behind current version, might not work with changes
+						System.out.println("Server idle timeout. Closing connection.");
+						break;
 					} catch (IOException e) {
 						e.printStackTrace();
 						System.exit(1);
@@ -399,7 +410,10 @@ public class TFTPClientConnectionThread implements Runnable {
 					try {
 				           // Block until a datagram is received via sendReceiveSocket.
 				           receiveSocket.receive(receivePacket);
-				        } catch(IOException e) {
+				        } catch(InterruptedIOException ie) {
+				        	System.out.println("Server timeout. Resending packet");
+				        	continue;
+						} catch(IOException e) {
 				           e.printStackTrace();
 				           System.exit(1);
 				        }

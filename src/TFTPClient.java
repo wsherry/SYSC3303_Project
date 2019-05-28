@@ -1,4 +1,3 @@
-
 // TFTPClient.java
 // This class is the client side for a very simple assignment based on TFTP on
 // UDP/IP. The client uses one port and sends a read or write request and gets 
@@ -15,12 +14,13 @@ public class TFTPClient {
 	private static boolean verboseMode = false; // false for quiet and true for verbose
 	private static String ipAddress = "";
 	// private static String ipAddress = "192.168.0.21";
-	private static String clientDirectory = "";
+	private static String clientDirectory = "C:\\Alexei's Stuff\\Carleton University";
 	// private static String clientDirectory = "C:\\Users\\Sherry
 	// Wang\\Documents\\GitHub\\SYSC3303_Project\\src";
 	private static boolean finishedRequest = false;
 	private boolean running = true;
-
+	private static final int TIMEOUT = 1000; //Delay for timeout when waiting to receive file 
+	
 	// we can run in normal (send directly to server) or test
 	// (send to simulator) mode
 	public static enum Mode {
@@ -41,6 +41,8 @@ public class TFTPClient {
 			// port on the local host machine. This socket will be used to
 			// send and receive UDP Datagram packets.
 			sendReceiveSocket = new DatagramSocket();
+			//Set socket timeout to allow for retransmission
+			sendReceiveSocket.setSoTimeout(TIMEOUT);
 		} catch (SocketException se) { // Can't create the socket.
 			se.printStackTrace();
 			System.exit(1);
@@ -51,6 +53,7 @@ public class TFTPClient {
 		Scanner sc = new Scanner(System.in);
 		// user toggle verbose or quiets mode
 		String input = "";
+		boolean received = false;
 
 		byte readWrite = (byte) 1; // default value for initialization
 
@@ -161,10 +164,10 @@ public class TFTPClient {
 			// 69 - the destination port number on the destination host.
 			try {
 
-				sendPacket = new DatagramPacket(msg, len, InetAddress.getLocalHost(), sendPort);
+				//sendPacket = new DatagramPacket(msg, len, InetAddress.getLocalHost(), sendPort);
 				// */
-				// sendPacket = new DatagramPacket(msg, len, InetAddress.getByName(ipAddress),
-				// sendPort);
+				 sendPacket = new DatagramPacket(msg, len, InetAddress.getByName(ipAddress),
+				 sendPort);
 			} catch (UnknownHostException e) {
 				e.printStackTrace();
 				System.exit(1);
@@ -188,65 +191,77 @@ public class TFTPClient {
 			String sending = new String(msg, 0, len);
 			System.out.println(sending);
 
-			// Send the datagram packet to the server via the send/receive socket.
-
-			try {
-				sendReceiveSocket.send(sendPacket);
-			} catch (IOException e) {
-				e.printStackTrace();
-				System.exit(1);
-			}
-
-			System.out.println("Client: Packet sent.");
-
-			// Construct a DatagramPacket for receiving packets up
-			// to 100 bytes long (the length of the byte array).
-
-			data = new byte[100];
-			receivePacket = new DatagramPacket(data, data.length);
+			//Append the directory to the beginning of the file
 			fileName = clientDirectory + "//" + fileName;
-			if (request != RequestType.READ) {
-				System.out.println("Client: Waiting for packet.");
+			
+			// Send the datagram packet to the server via the send/receive socket.
+			received = false;//reset flag for receiving packet
+			while(!received){//set to true when client receives response to read/write request
 				try {
-					// Block until a datagram is received via sendReceiveSocket.
-					sendReceiveSocket.receive(receivePacket);
+					sendReceiveSocket.send(sendPacket);
 				} catch (IOException e) {
 					e.printStackTrace();
 					System.exit(1);
 				}
-
-				// Process the received datagram.
-				len = receivePacket.getLength();
-				if (verboseMode) {
-					System.out.println("Client: Packet received:");
-					System.out.println("From host: " + receivePacket.getAddress());
-					System.out.println("Host port: " + receivePacket.getPort());
-					System.out.println("Length: " + len);
-					System.out.println("Containing: ");
-					for (j = 0; j < len; j++) {
-						System.out.println("byte " + j + " " + data[j]);
+	
+				System.out.println("Client: Packet sent.");
+	
+				// Construct a DatagramPacket for receiving packets up
+				// to 100 bytes long (the length of the byte array).
+	
+				data = new byte[100];
+				receivePacket = new DatagramPacket(data, data.length);
+				
+				if (request != RequestType.READ) {
+					System.out.println("Client: Waiting for packet.");
+					try {
+						// Block until a datagram is received via sendReceiveSocket.
+						sendReceiveSocket.receive(receivePacket);
+					} catch(InterruptedIOException ie) {
+						System.out.println("Client Timed out. Resending packet.");
+						continue;
+					}catch (IOException e) {
+						e.printStackTrace();
+						System.exit(1);
+					}
+					received = true;
+					
+					// Process the received datagram.
+					len = receivePacket.getLength();
+					if (verboseMode) {
+						System.out.println("Client: Packet received:");
+						System.out.println("From host: " + receivePacket.getAddress());
+						System.out.println("Host port: " + receivePacket.getPort());
+						System.out.println("Length: " + len);
+						System.out.println("Containing: ");
+						for (j = 0; j < len; j++) {
+							System.out.println("byte " + j + " " + data[j]);
+						}
+					} else {
+						System.out.println("Client: Packet received.");
+					}
+	
+					boolean ackVerified = false;
+					byte[] readAck = new byte[] { 0, 3, 0, 1 };
+					byte[] writeAck = new byte[] { 0, 4, 0, 0 };
+					if (request == RequestType.READ) {
+						ackVerified = Arrays.equals(readAck, data);
+					} else {
+						ackVerified = Arrays.equals(writeAck, data);
+					}
+	
+					//if (!ackVerified) // re-send request
+					if (request == RequestType.WRITE) {
+						transferFiles(fileName, sendPort);
 					}
 				} else {
-					System.out.println("Client: Packet received.");
+					receiveFiles(fileName, sendPort);
+					if(finishedRequest) {
+						break;
+					}
 				}
-
-				boolean ackVerified = false;
-				byte[] readAck = new byte[] { 0, 3, 0, 1 };
-				byte[] writeAck = new byte[] { 0, 4, 0, 0 };
-				if (request == RequestType.READ) {
-					ackVerified = Arrays.equals(readAck, data);
-				} else {
-					ackVerified = Arrays.equals(writeAck, data);
-				}
-
-				//if (!ackVerified) // re-send request
-				if (request == RequestType.WRITE) {
-					transferFiles(fileName, sendPort);
-				}
-			} else {
-				receiveFiles(fileName, sendPort);
+				System.out.println();
 			}
-			System.out.println();
 		}
 		System.out.println("Client is off");
 		// We're finished, so close the socket.
@@ -274,7 +289,11 @@ public class TFTPClient {
 	 */
 
 	public void receiveFiles(String fileName, int sendPort) {
-
+		ArrayList<Integer> processedBlocks = new ArrayList<>();
+		
+		//used to differentiate between read request response and regular file transfer
+		boolean requestResponse = true;
+		
 		try {
 			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(fileName));
 
@@ -284,13 +303,29 @@ public class TFTPClient {
 				int len = receivePacket.getLength();
 
 				System.out.println("Client: Waiting for data packet.");
-
-				try {
-					// Block until a datagram is received via sendReceiveSocket.
-					sendReceiveSocket.receive(receivePacket);
-				} catch (IOException e) {
-					e.printStackTrace();
-					System.exit(1);
+				if(requestResponse) {
+					try {
+						// Block until a datagram is received via sendReceiveSocket.
+						sendReceiveSocket.receive(receivePacket);
+					}catch(InterruptedIOException io) {
+						System.out.println("Client timed out. resending request.");
+						break;
+					}catch (IOException e) {
+						e.printStackTrace();
+						System.exit(1);
+					}
+				} else {
+					try {
+						// Block until a datagram is received via sendReceiveSocket.
+						sendReceiveSocket.setSoTimeout(300000);
+						sendReceiveSocket.receive(receivePacket);
+						sendReceiveSocket.setSoTimeout(TIMEOUT);
+					}catch(InterruptedIOException io) {
+						System.out.println("Client has exceeded idle time. Cancelling transfer.");
+					}catch (IOException e) {
+						e.printStackTrace();
+						System.exit(1);
+					}
 				}
 				// Process the received datagram.
 				len = receivePacket.getLength();
@@ -298,14 +333,20 @@ public class TFTPClient {
 
 				System.out.println("Client: Data Packet received.");
 
-				try {
-					out.write(data, 4, data.length - 4);
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				// Check if it's a duplicate packet. If it is, we still want to send an ACK but not rewrite to the file.
+				if (!processedBlocks.contains(data[2]*10+data[3])) {
+					// This block number has not been processed. Write it to the file.
+					try {
+						out.write(data, 4, data.length - 4);
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					processedBlocks.add(data[2]*10+data[3]);
+				} 		
 
 				if (verboseMode) {
+					System.out.println("Block number: " + data[2] + data[3]);
 					System.out.println("From host: " + receivePacket.getAddress());
 					System.out.println("Host port: " + receivePacket.getPort());
 					System.out.println("Length: " + len);
@@ -315,7 +356,7 @@ public class TFTPClient {
 					}
 				}
 
-				byte[] ack = new byte[] { 0, 4, 0, 0 };
+				byte[] ack = new byte[] { 0, 4, data[2], data[3]};
 
 				sendPacket = new DatagramPacket(ack, ack.length, InetAddress.getByName(ipAddress), sendPort);
 
@@ -340,6 +381,7 @@ public class TFTPClient {
 				}
 				if (len < 516) {
 					System.out.println("Received all data packets");
+					finishedRequest = true;
 					try {
 						out.close();
 					} catch (IOException e) {
@@ -356,13 +398,13 @@ public class TFTPClient {
 	}
 
 	public void transferFiles(String filename, int sendPort) {
-		int blockNum = 0;
+		int blockNum = 1; // Data blocks start at one.
 		byte[] data = new byte[100];
 		receivePacket = new DatagramPacket(data, data.length);
 		byte[] dataBuffer = new byte[512];
 		try {
 			BufferedInputStream bis = new BufferedInputStream(new FileInputStream(filename));
-
+		
 			int bytesRead = 0;
 			while ((bytesRead = bis.read(dataBuffer, 0, 512)) != -1) {
 				byte[] msg = new byte[bytesRead + 4];
@@ -386,6 +428,9 @@ public class TFTPClient {
 				try {
 					// Block until a datagram is received via sendReceiveSocket.
 					sendReceiveSocket.receive(receivePacket);
+				} catch(InterruptedIOException ie) {
+					System.out.println("Client Timed out. Resending packet.");
+					continue;
 				} catch (IOException e) {
 					e.printStackTrace();
 					System.exit(1);
@@ -393,6 +438,7 @@ public class TFTPClient {
 				int len = receivePacket.getLength();
 				if (verboseMode) {
 					System.out.println("Client: Packet received:");
+					System.out.println("Block number: " + receivePacket.getData()[2] + receivePacket.getData()[3]);
 					System.out.println("From host: " + receivePacket.getAddress());
 					System.out.println("Host port: " + receivePacket.getPort());
 					System.out.println("Length: " + len);
@@ -407,6 +453,7 @@ public class TFTPClient {
 
 				if (sendPacket.getLength() < 516) {
 					System.out.println("Client: Last packet sent.");
+					finishedRequest = true;
 				}
 
 			}
@@ -422,8 +469,8 @@ public class TFTPClient {
 		byte[] blockNumArray = new byte[2];
 
 		// create the corresponding block number in 2 bytes
-		byte block1 = (byte) (blockNum / 256);
-		byte block2 = (byte) (blockNum % 256);
+		byte block1 = (byte) (blockNum / 10);
+		byte block2 = (byte) (blockNum % 10);
 		blockNumArray[0] = block1;
 		blockNumArray[1] = block2;
 		return blockNumArray;
@@ -488,7 +535,7 @@ public class TFTPClient {
 				"\nCurrent client directory is: " + (clientDirectory.equals("") ? "undefined" : clientDirectory));
 		// option to set the file directory.
 		// User must input file directory at the first launch.
-		// Once an file directory has been set, the user can enter nothing to keep it
+		// Once anhr file directory has been set, the user can enter nothing to keep it
 		// unchanged.
 		while (input.equals("")) {
 			System.out.println("Enter the client of directory or nothing to keep the directory unchanged: ");
