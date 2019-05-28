@@ -19,7 +19,7 @@ public class TFTPClient {
 	// Wang\\Documents\\GitHub\\SYSC3303_Project\\src";
 	private static boolean finishedRequest = false;
 	private boolean running = true;
-	private static final int TIMEOUT = 8000; //Delay for timeout when waiting to receive file 
+	private static final int TIMEOUT = 1000; //Delay for timeout when waiting to receive file 
 	
 	// we can run in normal (send directly to server) or test
 	// (send to simulator) mode

@@ -268,8 +268,15 @@ public class TFTPClientConnectionThread implements Runnable {
 					System.out.println("Server: Waiting for data packet.");
 
 					try {
-						// Block until a datagram is received via sendReceiveSocket.
+						// Block until a datagram is received via sendReceiveSocket, or until
+						// idle for exceptional amount of time
+						receiveSocket.setSoTimeout(300000);
 						receiveSocket.receive(receivePacket);
+						receiveSocket.setSoTimeout(TIMEOUT);
+					} catch(InterruptedIOException ie) {
+						//NOT IMPLEMENTED. Behind current version, might not work with changes
+						System.out.println("Server idle timeout. Closing connection.");
+						break;
 					} catch (IOException e) {
 						e.printStackTrace();
 						System.exit(1);
@@ -403,7 +410,10 @@ public class TFTPClientConnectionThread implements Runnable {
 					try {
 				           // Block until a datagram is received via sendReceiveSocket.
 				           receiveSocket.receive(receivePacket);
-				        } catch(IOException e) {
+				        } catch(InterruptedIOException ie) {
+				        	System.out.println("Server timeout. Resending packet");
+				        	continue;
+						} catch(IOException e) {
 				           e.printStackTrace();
 				           System.exit(1);
 				        }
