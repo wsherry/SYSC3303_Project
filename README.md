@@ -51,7 +51,7 @@ Pragya Singh:
 
 Alan Lin:
 -Added an UI to the error simulator (TFTPSim.java) that allows the user to configure the options for the error simulation.
-- Added the following modes normal, loss and delayed.
+-Added the following modes normal, loss and delayed.
 
 Ben Bozec:
 -Timeout functionality (can be seen in the features) 
