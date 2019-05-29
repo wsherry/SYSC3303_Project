@@ -393,7 +393,7 @@ public class TFTPClientConnectionThread implements Runnable {
 		// read files
 		public void transferFiles(String filename, int sendPort, DatagramPacket receivePacket) {
 		   ArrayList<Integer> processedACKBlocks = new ArrayList<>();
-		   int blockNum = 0;
+		   int blockNum = 1; // You start at data block one when reading from a server.
 		   byte[] data = new byte[100];
 	       	   receivePacket.setData(data, 0, data.length);;
 		   byte[] dataBuffer = new byte[512];
@@ -467,7 +467,7 @@ public class TFTPClientConnectionThread implements Runnable {
 					   int len = receivePacket.getLength();
 					   
 						if (verboseMode) {
-							System.out.println("Client: Packet received:");
+							System.out.println("Server: Packet received:");
 							System.out.println("From host: " + receivePacket.getAddress());
 							System.out.println("Host port: " + receivePacket.getPort());
 							System.out.println("Length: " + len);
