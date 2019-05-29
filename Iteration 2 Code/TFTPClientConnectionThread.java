@@ -455,12 +455,12 @@ public class TFTPClientConnectionThread implements Runnable {
 						continue;			
 					}
 					
-					// Check if the received packet is a duplicate ACK. If it is, then we should not be re-sending the N data packet for the ACK. Sorcerer's Apprentice Bug. 
+					// Check if the received packet is a duplicate ACK. If it is, then we should not be re-sending the Nth data packet for the ACK. Sorcerer's Apprentice Bug. 
 					if (!processedACKBlocks.contains(data[2]*10+data[3])) {
 						processedACKBlocks.add(data[2]*10+data[3]);
 					}  else {
 						if (verboseMode) {
-							System.out.println("Server: Duplicate ACK data packet received. Ignoring it by not re-sending data block N and waiting for the next datablock");
+							System.out.println("Server: Duplicate ACK data packet received. Ignoring it by not re-sending data block number [" + data[2]*10+data[3] + "] and waiting for the next datablock.");
 						}
 					}
 

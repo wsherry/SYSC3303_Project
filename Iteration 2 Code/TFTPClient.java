@@ -13,13 +13,11 @@ public class TFTPClient {
 	private DatagramSocket sendReceiveSocket;
 	private static boolean verboseMode = false; // false for quiet and true for verbose
 	private static String ipAddress = "";
-	// private static String ipAddress = "192.168.0.21";
-	private static String clientDirectory = "C:\\Alexei's Stuff\\Carleton University";
-	// private static String clientDirectory = "C:\\Users\\Sherry
-	// Wang\\Documents\\GitHub\\SYSC3303_Project\\src";
+	private static String clientDirectory = "";
 	private static boolean finishedRequest = false;
 	private boolean running = true;
 	private static final int TIMEOUT = 1000; //Delay for timeout when waiting to receive file 
+	private ArrayList<Integer> processedACKBlocks = new ArrayList<>();
 	
 	// we can run in normal (send directly to server) or test
 	// (send to simulator) mode
@@ -253,6 +251,7 @@ public class TFTPClient {
 	
 					//if (!ackVerified) // re-send request
 					if (request == RequestType.WRITE) {
+						processedACKBlocks.add(data[2]*10+data[3]);	
 						transferFiles(fileName, sendPort);
 					}
 				} else {
@@ -351,7 +350,6 @@ public class TFTPClient {
 				}		
 
 				if (verboseMode) {
-					System.out.println("Block number: " + data[2] + data[3]);
 					System.out.println("From host: " + receivePacket.getAddress());
 					System.out.println("Host port: " + receivePacket.getPort());
 					System.out.println("Length: " + len);
@@ -403,7 +401,6 @@ public class TFTPClient {
 	}
 
 	public void transferFiles(String filename, int sendPort) {
-		ArrayList<Integer> processedACKBlocks = new ArrayList<>();
 		int blockNum = 1; // Data blocks start at one.
 		byte[] data = new byte[100];
 		receivePacket = new DatagramPacket(data, data.length);
@@ -442,12 +439,12 @@ public class TFTPClient {
 					e.printStackTrace();
 					System.exit(1);
 				}
-				// Check if the received packet is a duplicate ACK. If it is, then we should not be re-sending the next N+1 data packet for the ACK. Sorcerer's Apprentice Bug. 		
+				// Check if the received packet is a duplicate ACK. If it is, then we should not be re-sending the Nth data packet for the ACK. Sorcerer's Apprentice Bug. 	
 				if (!processedACKBlocks.contains(data[2]*10+data[3])) {		
 					processedACKBlocks.add(data[2]*10+data[3]);		
 				}  else {		
 					if (verboseMode) {		
-						System.out.println("Client: Duplicate ACK data packet received. Ignoring it by not re-sending data block N and waiting for the next datablock");		
+						System.out.println("Client: Duplicate ACK data packet received. Ignoring it by not re-sending data block  number [" + data[2]*10+data[3] + "] and waiting for the next datablock.");		
 					}		
 				}
 

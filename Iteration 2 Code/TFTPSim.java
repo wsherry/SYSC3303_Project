@@ -124,6 +124,10 @@ public class TFTPSim {
  	        	 System.out.println("Packet type: " + packetType);
  	        	 System.out.println("To host: " + sendPacket.getAddress());
  	        	 System.out.println("Destination host port: " + sendPacket.getPort());
+ 	        	 System.out.println("Containing: ");
+	        	 for (j=0;j<len;j++) {
+	        		 System.out.println("byte " + j + " " + data[j]);
+	        	 }
  	        }
  	
  	        // Send the duplicate datagram packet to the server via the send/receive socket.
@@ -227,7 +231,7 @@ public class TFTPSim {
         		 // TODO Auto-generated catch packetCount
         		 e.printStackTrace();
         	 }
-         } else if (mode == Mode.DUPLICATE && packetCount == packetNumber && receivedType == packetType) {
+         } else if (mode == Mode.DUPLICATE && packetCount == packetNumber+1 && receivedType == packetType) {
             sendPacket = new DatagramPacket(data, receivePacket.getLength(), clientAdress, clientPort);
   	        len = sendPacket.getLength();
   	        System.out.println("\nSimulator: sending duplicate packet from server to client.");
