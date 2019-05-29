@@ -228,11 +228,7 @@ public class TFTPSim {
         		 e.printStackTrace();
         	 }
          } else if (mode == Mode.DUPLICATE && packetCount == packetNumber && receivedType == packetType) {
-        	 try {
-  				sendPacket = new DatagramPacket(data, len, InetAddress.getLocalHost(), 69);
-  			} catch (UnknownHostException e1) {
-  				e1.printStackTrace();
-  			}
+            sendPacket = new DatagramPacket(data, receivePacket.getLength(), clientAdress, clientPort);
   	        len = sendPacket.getLength();
   	        System.out.println("\nSimulator: sending duplicate packet from server to client.");
   	        if (verboseMode) {
