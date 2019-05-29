@@ -80,6 +80,7 @@ The server and client are able to now handle network errors ( lost, delayed, dup
 
 
 Errors Iteration 2:
+TFTPClientConnection currently doesn’t use port 69 for receiving data
 
 
 Overview of each class:
