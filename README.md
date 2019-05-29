@@ -8,6 +8,8 @@ Alexei Tchekansky 100324946
 
 Contributions: 
 
+Iteration 1:
+
 Alexei Tchekansky:
 -Mulithreading between the client and the server
 -UML Class Diagrams
@@ -29,8 +31,55 @@ Sherry Wang:
 -Use case diagrams
 -Testing
 
+Iteration 2: 
+
+Sherry Wang:
+-File transfer Testing( mainly large files)
+-File tranfer testing for multiple files
+-Changed user inputted IP address
+-Changing client and server connection formating and function issues 
+
+Alexei Tchekansky:
+-Fixing the server from iteration 1 so that it continues running and waiting for requests
+-UML Class diagrams 
+-Duplicate packet functionality and handling duplicates in the client and server.
+
+Pragya Singh: 
+-Sequence diagrams 
+-State diagrams 
+-Read me 
+
+Alan Lin:
+-Added an UI to the error simulator (TFTPSim.java) that allows the user to configure the options for the error simulation.
+- Added the following modes normal, loss and delayed.
+
+Ben Bozec:
+-Timeout functionality (can be seen in the features) 
+
+Added Features Since iteration 1:
+-File tranfer of larger and multiple files 
+-Changed inputter IP address for the user 
+-Changed formatting issues to make the code clener 
+-Fixed the server so that it continues to run after waiting for a request.
+-Duplicate packed functionalitu 
+-UI to the error simualator that allows the user to configure between differnt options 
+-When set time has passed (currently 1 second), Client will resend read/write 
+request if no response is received.
+-During transfer, if the side that sends the data packets does not receive an ACK packet 
+within 1 second, the previous data packet is resent 
+-During transfer, if the server does not receive a data packet within
+a reasonably long period of time (currently 5 minutes) the server ends the transfer and 
+closes the connection (Idle timeout not implemented for Client yet)
+
+
 Project Overview for Iteration 0 and 1:
 The programs allows clients to establish WRQ connections and RRQ connections with the server. This is done due to the implementation of steady-state file transfer between the client and the server. Ever RRQ the server will respond with specific data block of 0-1 bytes in order to see if a file was written or read from properly respond witha ACK block 0. For every WRQ request ther sever will The error simulator will just pass on packets (client to server, and server to client).The server has a new thread that represents a new client and this connection thread is used to connect with the client. The error simulator in this iteration only passes a package between the client and the server, in this iteration no error simulation is done. 
+
+Project Overview for Iteration 2:
+The server and client are able to now handle network errors ( lost, delayed, duplicaiton). While having the side sending the data files also be able to have a timeout and retransmit.The UI will also allow the user to pick particular modes they would like to configure the program to run in. 
+
+
+Errors Iteration 2:
 
 
 Overview of each class:
@@ -51,7 +100,21 @@ The simulator receives a read or write packet from a client and passes it on to 
 
 
 Installation/setup instructions:
+
+Iteration 1: 
+
 1) Run server.java as java application and follow the command line prompts. Copy the displayed address after configuration is complete.
 2) Run TFTPSim.java as java application. *Not necessary if only running in normal mode.
 3) Run client.java as java application and follow the command line prompts. When prompted for the IP adress, paste the IP adress that was copied from the server.
 ** run in the above order
+
+Iteration 2: 
+Installation/setup instructions:
+
+1. Run server.java as java application and follow the command line prompts. Copy/note the displayed address after configuration is complete.
+2. Run TFTPSim.java as java application. *Not necessary if only running in normal mode.
+	2.1 If running TFTPSim.java, follow the command line prompts. If you a mode that's not NORMAL mode, you will be prompted for more simulation configurations.
+3. Run client.java as java application and follow the command line prompts. When prompted for the IP adress, paste the IP adress that was copied/noted from the server.
+** run in the above order**
+
+
