@@ -252,10 +252,10 @@ public class TFTPClient {
 					//if (!ackVerified) // re-send request
 					if (request == RequestType.WRITE) {
 						processedACKBlocks.add(data[2]*10+data[3]);	
-						transferFiles(fileName, sendPort);
+						transferFiles(fileName, receivePacket.getPort());
 					}
 				} else {
-					receiveFiles(fileName, sendPort);
+					receiveFiles(fileName);
 					if(finishedRequest) {
 						break;
 					}
@@ -288,12 +288,16 @@ public class TFTPClient {
 	 * (IOException e) { e.printStackTrace(); System.exit(1); } } }
 	 */
 
-	public void receiveFiles(String fileName, int sendPort) {
+	public void receiveFiles(String fileName) {
 		ArrayList<Integer> processedBlocks = new ArrayList<>();
 		
 		//used to differentiate between read request response and regular file transfer
 		boolean requestResponse = true;
-		
+		int sendPort;
+		if (run == Mode.NORMAL)
+			sendPort = 69;
+		else
+			sendPort = 23;
 		try {
 			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(fileName));
 
@@ -307,6 +311,7 @@ public class TFTPClient {
 					try {
 						// Block until a datagram is received via sendReceiveSocket.
 						sendReceiveSocket.receive(receivePacket);
+						sendPort = receivePacket.getPort();
 					}catch(InterruptedIOException io) {
 						System.out.println("Client timed out. resending request.");
 						break;
@@ -463,14 +468,16 @@ public class TFTPClient {
 					System.out.println("Client: Packet received.");
 				}
 				blockNum++;
+				System.out.println("!!!!!!!!");
+				System.out.println(sendPacket.getLength());
 
 				if (sendPacket.getLength() < 516) {
 					System.out.println("Client: Last packet sent.");
+					bis.close();
 					finishedRequest = true;
 				}
 
 			}
-			bis.close();
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();

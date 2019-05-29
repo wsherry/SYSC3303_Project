@@ -10,7 +10,7 @@ import java.util.Scanner;
 public class TFTPServer {
    // UDP datagram packets and sockets used to send / receive
    private static boolean verboseMode = false; //false for quiet and true for verbose
-   private static String serverDirectory = "";
+   private static String serverDirectory = "C:\\Users\\alanlin\\Desktop";
    
    /*public TFTPServer()
    {
@@ -35,7 +35,7 @@ public class TFTPServer {
 	  Scanner sc = new Scanner (System.in);
 	  String input;
 	  
-	  //create ne thread for receiving
+	  //create new thread for receiving
 	  TFTPClientConnectionThread recieveThread = new TFTPClientConnectionThread(verboseMode, serverDirectory);      
 	  new Thread(recieveThread).start();
 
