@@ -8,6 +8,7 @@ public class TFTPClientConnectionThread implements Runnable {
 
 	private DatagramSocket receiveSocket;
 	private DatagramPacket receivePacket;
+	private int connectionPort;
 	private boolean verboseMode = false; // false for quiet and true for verbose
 
 	private Request request;
@@ -440,6 +441,7 @@ public class TFTPClientConnectionThread implements Runnable {
 						sendReceiveSocket.receive(receivePacket);
 			        } catch(InterruptedIOException ie) {
 			        	System.out.println("Server timeout. Resending packet");
+			        	i--;
 			        	continue;
 					} catch(IOException e) {
 			           e.printStackTrace();

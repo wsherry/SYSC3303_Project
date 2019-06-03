@@ -11,6 +11,7 @@ public class TFTPClient {
 
 	private DatagramPacket sendPacket, receivePacket;
 	private DatagramSocket sendReceiveSocket;
+	private int connectionPort;
 	private static boolean verboseMode = false; // false for quiet and true for verbose
 	private static String ipAddress = "192.168.1.32";
 	private static String clientDirectory = "C:\\Alexei's Stuff\\Carleton University";
@@ -168,9 +169,7 @@ public class TFTPClient {
 
 				//sendPacket = new DatagramPacket(msg, len, InetAddress.getLocalHost(), sendPort);
 				// */
-				sendPacket = new DatagramPacket(msg, len, InetAddress.getByName(ipAddress),
-
-				 sendPort);
+				sendPacket = new DatagramPacket(msg, len, InetAddress.getByName(ipAddress), sendPort);
 			} catch (UnknownHostException e) {
 				e.printStackTrace();
 				System.exit(1);
@@ -319,10 +318,9 @@ public class TFTPClient {
 						sendReceiveSocket.receive(receivePacket);
 						if (run != Mode.TEST) sendPort = receivePacket.getPort();
 						requestResponse = false;
+						connectionPort = receivePacket.getPort();
 					}catch(InterruptedIOException io) {
 						System.out.println("Client timed out. resending request.");
-						finishedRequest = true;
-						changeMode = true;
 						break;
 					}catch (IOException e) {
 						e.printStackTrace();
@@ -336,15 +334,42 @@ public class TFTPClient {
 						sendReceiveSocket.setSoTimeout(TIMEOUT);
 					}catch(InterruptedIOException io) {
 						System.out.println("Client has exceeded idle time. Cancelling transfer.");
+						finishedRequest = true;
+						changeMode = true;
+						break;
 					}catch (IOException e) {
 						e.printStackTrace();
 						System.exit(1);
 					}
 				}
+				
+				//Check if packet came from correct source. Send back ERROR packet code 5 if not.
+				if(connectionPort != receivePacket.getPort()) {
+					System.out.print("Received Packet from unknown source. Responding with ERROR and continuing.");
+					byte[] err = new byte[] {0,5,0,5};
+					sendPacket = new DatagramPacket(err, err.length, InetAddress.getByName(ipAddress), receivePacket.getPort());
+					try{
+						sendReceiveSocket.send(sendPacket);
+					}catch(IOException e) {
+						e.printStackTrace();
+						System.exit(1);
+					}
+					continue;
+				}
+					
 				// Process the received datagram.
 				len = receivePacket.getLength();
 				data = receivePacket.getData();
 
+				//Check if ERROR packet was received
+				if(data[1] == 5) {
+					if(data[3] == 5) {
+						
+					}else {
+						
+					}
+				}
+				
 				System.out.println("Client: Data Packet received.");
 
 				// Check if it's a duplicate packet. If it is, we still want to send an ACK but not rewrite to the file.
@@ -456,6 +481,7 @@ public class TFTPClient {
 				sendReceiveSocket.receive(receivePacket);
 			} catch(InterruptedIOException ie) {
 				System.out.println("Client Timed out. Resending packet.");
+				i--;
 				continue;
 			} catch (IOException e) {
 				e.printStackTrace();

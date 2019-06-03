@@ -436,6 +436,7 @@ public class TFTPClient {
 				sendReceiveSocket.receive(receivePacket);
 			} catch(InterruptedIOException ie) {
 				System.out.println("Client Timed out. Resending packet.");
+				i--;
 				continue;
 			} catch (IOException e) {
 				e.printStackTrace();
