@@ -186,7 +186,7 @@ public class TFTPClientConnectionThread implements Runnable {
 		private DatagramPacket receivePacket;
 		private DatagramPacket sendPacket;
 		private boolean verboseMode = false; // false for quiet and true for verbose
-		private static final int TIMEOUT = 3000;
+		private static final int TIMEOUT = 4000;
 
 		private Request request;
 
