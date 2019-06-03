@@ -12,14 +12,12 @@ public class TFTPClient {
 	private DatagramPacket sendPacket, receivePacket;
 	private DatagramSocket sendReceiveSocket;
 	private static boolean verboseMode = false; // false for quiet and true for verbose
-	private static String ipAddress = "";
-	// private static String ipAddress = "192.168.0.21";
+	private static String ipAddress = "192.168.1.32";
 	private static String clientDirectory = "C:\\Alexei's Stuff\\Carleton University";
-	// private static String clientDirectory = "C:\\Users\\Sherry
-	// Wang\\Documents\\GitHub\\SYSC3303_Project\\src";
 	private static boolean finishedRequest = false;
 	private boolean running = true;
 	private static final int TIMEOUT = 1000; //Delay for timeout when waiting to receive file 
+	private ArrayList<Integer> processedACKBlocks = new ArrayList<>();
 	
 	// we can run in normal (send directly to server) or test
 	// (send to simulator) mode
@@ -166,7 +164,8 @@ public class TFTPClient {
 
 				//sendPacket = new DatagramPacket(msg, len, InetAddress.getLocalHost(), sendPort);
 				// */
-				 sendPacket = new DatagramPacket(msg, len, InetAddress.getByName(ipAddress),
+				sendPacket = new DatagramPacket(msg, len, InetAddress.getByName(ipAddress),
+
 				 sendPort);
 			} catch (UnknownHostException e) {
 				e.printStackTrace();
@@ -252,6 +251,7 @@ public class TFTPClient {
 	
 					//if (!ackVerified) // re-send request
 					if (request == RequestType.WRITE) {
+						processedACKBlocks.add(data[2]*10+data[3]);	// Add this point it should be ACK 0.
 						transferFiles(fileName, sendPort);
 					}
 				} else {
@@ -337,16 +337,20 @@ public class TFTPClient {
 				if (!processedBlocks.contains(data[2]*10+data[3])) {
 					// This block number has not been processed. Write it to the file.
 					try {
-						out.write(data, 4, data.length - 4);
+						out.write(data, 4, len - 4);
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
 					processedBlocks.add(data[2]*10+data[3]);
-				} 		
+				} else {					
+					if (verboseMode) {		
+						System.out.println("Client: Duplicate data packet received. Ignoring it by not writing it again.");	
+						// TODO We should send an Nth ACK for the Nth duplicate data packet that was received.
+					}		
+				}		
 
 				if (verboseMode) {
-					System.out.println("Block number: " + data[2] + data[3]);
 					System.out.println("From host: " + receivePacket.getAddress());
 					System.out.println("Host port: " + receivePacket.getPort());
 					System.out.println("Length: " + len);
@@ -401,66 +405,72 @@ public class TFTPClient {
 		int blockNum = 1; // Data blocks start at one.
 		byte[] data = new byte[100];
 		receivePacket = new DatagramPacket(data, data.length);
-		byte[] dataBuffer = new byte[512];
-		try {
-			BufferedInputStream bis = new BufferedInputStream(new FileInputStream(filename));
-		
-			int bytesRead = 0;
-			while ((bytesRead = bis.read(dataBuffer, 0, 512)) != -1) {
-				byte[] msg = new byte[bytesRead + 4];
-				msg[0] = 0;
-				msg[1] = 3;
-				msg[2] = blockNumBytes(blockNum)[0];
-				msg[3] = blockNumBytes(blockNum)[1];
 
-				System.arraycopy(dataBuffer, 0, msg, 4, bytesRead);
+		ArrayList<byte[]> msgBuffer = readFileIntoBlocks(filename);
+
+		for (int i = 0; i < msgBuffer.size(); i++) {
+			byte[] msg = msgBuffer.get(i);
+			msg[0] = 0;
+			msg[1] = 3;
+			msg[2] = blockNumBytes(blockNum)[0];
+			msg[3] = blockNumBytes(blockNum)[1];
+
+			try {
 				sendPacket = new DatagramPacket(msg, msg.length, InetAddress.getByName(ipAddress), sendPort);
-
-				try {
-					sendReceiveSocket.send(sendPacket);
-				} catch (IOException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
-
-				System.out.println("Client: Data Packet sent.");
-
-				try {
-					// Block until a datagram is received via sendReceiveSocket.
-					sendReceiveSocket.receive(receivePacket);
-				} catch(InterruptedIOException ie) {
-					System.out.println("Client Timed out. Resending packet.");
-					continue;
-				} catch (IOException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
-				int len = receivePacket.getLength();
-				if (verboseMode) {
-					System.out.println("Client: Packet received:");
-					System.out.println("Block number: " + receivePacket.getData()[2] + receivePacket.getData()[3]);
-					System.out.println("From host: " + receivePacket.getAddress());
-					System.out.println("Host port: " + receivePacket.getPort());
-					System.out.println("Length: " + len);
-					System.out.println("Containing: ");
-					for (int j = 0; j < len; j++) {
-						System.out.println("byte " + j + " " + data[j]);
-					}
-				} else {
-					System.out.println("Client: Packet received.");
-				}
-				blockNum++;
-
-				if (sendPacket.getLength() < 516) {
-					System.out.println("Client: Last packet sent.");
-					finishedRequest = true;
-				}
-
+			} catch (UnknownHostException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
 			}
-			bis.close();
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
+
+			try {
+				sendReceiveSocket.send(sendPacket);
+			} catch (IOException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+
+			System.out.println("Client: Data Packet sent.");
+
+			try {
+				// Block until a datagram is received via sendReceiveSocket.
+				sendReceiveSocket.receive(receivePacket);
+			} catch(InterruptedIOException ie) {
+				System.out.println("Client Timed out. Resending packet.");
+				continue;
+			} catch (IOException e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+			// Check if the received packet is a duplicate ACK. If it is, then we should not be re-sending the Nth data packet for the ACK. Sorcerer's Apprentice Bug. 	
+			if (!processedACKBlocks.contains(data[2]*10+data[3])) {		
+				processedACKBlocks.add(data[2]*10+data[3]);		
+			}  else {		
+				if (verboseMode) {		
+					System.out.println("Client: Duplicate ACK data packet received. Ignoring it by not re-sending data block  number [" + data[2]*10+data[3] + "] and waiting for the next datablock.");		
+				}		
+			}
+
+			int len = receivePacket.getLength();
+			if (verboseMode) {
+				System.out.println("Client: Packet received:");
+				System.out.println("Block number: " + receivePacket.getData()[2] + receivePacket.getData()[3]);
+				System.out.println("From host: " + receivePacket.getAddress());
+				System.out.println("Host port: " + receivePacket.getPort());
+				System.out.println("Length: " + len);
+				System.out.println("Containing: ");
+				for (int j = 0; j < len; j++) {
+					System.out.println("byte " + j + " " + data[j]);
+				}
+			} else {
+				System.out.println("Client: Packet received.");
+			}
+			blockNum++;
+
+			if (sendPacket.getLength() < 516) {
+				System.out.println("Client: Last packet sent.");
+				finishedRequest = true;
+			}
+
 		}
 	}
 
@@ -535,7 +545,7 @@ public class TFTPClient {
 				"\nCurrent client directory is: " + (clientDirectory.equals("") ? "undefined" : clientDirectory));
 		// option to set the file directory.
 		// User must input file directory at the first launch.
-		// Once anhr file directory has been set, the user can enter nothing to keep it
+		// Once a file directory has been set, the user can enter nothing to keep it
 		// unchanged.
 		while (input.equals("")) {
 			System.out.println("Enter the client of directory or nothing to keep the directory unchanged: ");
@@ -561,5 +571,25 @@ public class TFTPClient {
 		System.out.println("Welcome to the TFTP client application");
 		configClient();
 		c.sendAndReceive();
+	}
+	
+	private ArrayList<byte[]> readFileIntoBlocks(String fileName) {
+		ArrayList<byte[]> msgList = new ArrayList<>();
+		byte[] dataBuffer = new byte[512];
+		BufferedInputStream bis;
+		int bytesRead;
+		try {
+			bis = new BufferedInputStream(new FileInputStream(fileName));	
+			while ((bytesRead = bis.read(dataBuffer, 0, 512)) != -1) {
+				byte[] msg = new byte[bytesRead + 4];	
+				System.arraycopy(dataBuffer, 0, msg, 4, bytesRead);
+				msgList.add(msg);
+			}
+			bis.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		return msgList;
 	}
 }
