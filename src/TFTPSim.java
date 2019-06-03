@@ -50,7 +50,7 @@ public class TFTPSim {
    {
       byte[] data;
       
-      int clientPort, j=0, len, packetCount=0;
+      int clientPort, serverPort=69, j=0, len, packetCount=0;
       InetAddress clientAdress;
 
       for(;;) { // loop forever
@@ -113,7 +113,7 @@ public class TFTPSim {
         	 }
          } else if (mode == Mode.DUPLICATE && packetCount == packetNumber && receivedType == packetType) {
         	try {
- 				sendPacket = new DatagramPacket(data, len, InetAddress.getLocalHost(), 69);
+        		sendPacket = new DatagramPacket(data, len, InetAddress.getLocalHost(), serverPort);
  			} catch (UnknownHostException e1) {
  				e1.printStackTrace();
  			}
@@ -146,8 +146,7 @@ public class TFTPSim {
 	         // Construct a datagram packet that is to be sent to a specified port
 	         // on a specified host.
 	         try {
-				sendPacket = new DatagramPacket(data, len,
-						 	InetAddress.getLocalHost(), 69);
+	        	 sendPacket = new DatagramPacket(data, len, InetAddress.getLocalHost(), serverPort);
 			} catch (UnknownHostException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -177,6 +176,7 @@ public class TFTPSim {
 	         if (data[1]==3) { //checking if last data packet
 	        	 if (len < 516) {
 					System.out.println("Received all data packets");
+					serverPort = 69;
 					configSim();
 					continue;
 	        	 }
@@ -198,6 +198,7 @@ public class TFTPSim {
             System.exit(1);
          }
 
+         serverPort = receivePacket.getPort();
     	 len = receivePacket.getLength();
          if (verboseMode) {
         	 // Process the received datagram.

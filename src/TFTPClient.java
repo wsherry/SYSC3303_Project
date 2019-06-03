@@ -15,8 +15,9 @@ public class TFTPClient {
 	private static String ipAddress = "192.168.1.32";
 	private static String clientDirectory = "C:\\Alexei's Stuff\\Carleton University";
 	private static boolean finishedRequest = false;
+	private static boolean changeMode = true;
 	private boolean running = true;
-	private static final int TIMEOUT = 1000; //Delay for timeout when waiting to receive file 
+	private static final int TIMEOUT = 3000; //Delay for timeout when waiting to receive file 
 	private ArrayList<Integer> processedACKBlocks = new ArrayList<>();
 	
 	// we can run in normal (send directly to server) or test
@@ -73,20 +74,23 @@ public class TFTPClient {
 			// NOT CORRECTLY IMPLEMENTED YET.
 			// THIS SHOULD ONLY PROMPT USER AFTER A REQUEST HAS FULLY COMPLETED
 			// User chooses read or write request
-			while (!(input.equals("1") || input.equals("2") || input.equals("3"))) {
-				System.out.println("\nEnter '1' for read or '2' write request or '3' to quit: ");
-				input = sc.nextLine();
-
-				if (input.equals("1")) {
-					readWrite = (byte) 1;
-					request = RequestType.READ;
-				} else if (input.equals("2")) {
-					readWrite = (byte) 2;
-					request = RequestType.WRITE;
-				} else if (input.equals("3"))
-					running = false;
-				else
-					System.out.print(input + " is not 1 or 2 or .\n");
+			if (changeMode) {
+				while (!(input.equals("1") || input.equals("2") || input.equals("3"))) {
+					System.out.println("\nEnter '1' for read or '2' write request or '3' to quit: ");
+					input = sc.nextLine();
+	
+					if (input.equals("1")) {
+						readWrite = (byte) 1;
+						request = RequestType.READ;
+					} else if (input.equals("2")) {
+						readWrite = (byte) 2;
+						request = RequestType.WRITE;
+					} else if (input.equals("3"))
+						running = false;
+					else
+						System.out.print(input + " is not 1 or 2 or .\n");
+				}
+				changeMode=false;
 			}
 
 			if (!running)
@@ -226,6 +230,7 @@ public class TFTPClient {
 					received = true;
 					
 					// Process the received datagram.
+					if (run != Mode.TEST) sendPort = receivePacket.getPort();
 					len = receivePacket.getLength();
 					if (verboseMode) {
 						System.out.println("Client: Packet received:");
@@ -250,12 +255,12 @@ public class TFTPClient {
 					}
 	
 					//if (!ackVerified) // re-send request
-					if (request == RequestType.WRITE) {
+					//if (request == RequestType.WRITE) {
 						processedACKBlocks.add(data[2]*10+data[3]);	// Add this point it should be ACK 0.
 						transferFiles(fileName, sendPort);
-					}
+					//}
 				} else {
-					receiveFiles(fileName, sendPort);
+					receiveFiles(fileName);
 					if(finishedRequest) {
 						break;
 					}
@@ -288,12 +293,17 @@ public class TFTPClient {
 	 * (IOException e) { e.printStackTrace(); System.exit(1); } } }
 	 */
 
-	public void receiveFiles(String fileName, int sendPort) {
+	/**
+	 * Receives for read request
+	 * @param fileName
+	 */
+	public void receiveFiles(String fileName) {
 		ArrayList<Integer> processedBlocks = new ArrayList<>();
 		
 		//used to differentiate between read request response and regular file transfer
 		boolean requestResponse = true;
-		
+		int sendPort = -1; 
+		if (run == Mode.TEST) sendPort = 23;
 		try {
 			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(fileName));
 
@@ -307,8 +317,12 @@ public class TFTPClient {
 					try {
 						// Block until a datagram is received via sendReceiveSocket.
 						sendReceiveSocket.receive(receivePacket);
+						if (run != Mode.TEST) sendPort = receivePacket.getPort();
+						requestResponse = false;
 					}catch(InterruptedIOException io) {
 						System.out.println("Client timed out. resending request.");
+						finishedRequest = true;
+						changeMode = true;
 						break;
 					}catch (IOException e) {
 						e.printStackTrace();
@@ -386,6 +400,7 @@ public class TFTPClient {
 				if (len < 516) {
 					System.out.println("Received all data packets");
 					finishedRequest = true;
+					changeMode = true;
 					try {
 						out.close();
 					} catch (IOException e) {
@@ -401,13 +416,18 @@ public class TFTPClient {
 		}
 	}
 
+	/**
+	 * 
+	 * @param filename
+	 * @param sendPort
+	 */
 	public void transferFiles(String filename, int sendPort) {
 		int blockNum = 1; // Data blocks start at one.
 		byte[] data = new byte[100];
 		receivePacket = new DatagramPacket(data, data.length);
 
 		ArrayList<byte[]> msgBuffer = readFileIntoBlocks(filename);
-
+		
 		for (int i = 0; i < msgBuffer.size(); i++) {
 			byte[] msg = msgBuffer.get(i);
 			msg[0] = 0;
@@ -469,12 +489,17 @@ public class TFTPClient {
 			if (sendPacket.getLength() < 516) {
 				System.out.println("Client: Last packet sent.");
 				finishedRequest = true;
+				changeMode = true;
 			}
 
 		}
 	}
 
-	// Converts the blocknumber as an int into a 2 byte array
+	/**
+	 * Converts the blocknumber as an int into a 2 byte array
+	 * @param blockNum
+	 * @return
+	 */
 	private byte[] blockNumBytes(int blockNum) {
 		byte[] blockNumArray = new byte[2];
 

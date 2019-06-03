@@ -182,17 +182,17 @@ public class TFTPClientConnectionThread implements Runnable {
 
 	public class TFTPsendThread implements Runnable {
 
-		private DatagramSocket sendSocket;
+		private DatagramSocket sendReceiveSocket;
 		private DatagramPacket receivePacket;
 		private DatagramPacket sendPacket;
 		private boolean verboseMode = false; // false for quiet and true for verbose
-		private static final int TIMEOUT = 1000;
+		private static final int TIMEOUT = 3000;
 
 		private Request request;
 
 		public TFTPsendThread(Request request, DatagramPacket receivePacket, boolean verboseMode) {
 			try {
-				sendSocket = new DatagramSocket();
+				sendReceiveSocket = new DatagramSocket();
 			} catch (SocketException se) {
 				se.printStackTrace();
 				System.exit(0);
@@ -235,43 +235,36 @@ public class TFTPClientConnectionThread implements Runnable {
 				System.out.println("Server: Packet sent.");
 			}
 
-			// Send the datagram packet to the client via a new socket.
 			try {
-				// Construct a new datagram socket and bind it to any port
-				// on the local host machine. This socket will be used to
-				// send UDP Datagram packets.
-				sendSocket = new DatagramSocket();
-			} catch (SocketException se) {
-				se.printStackTrace();
-				System.exit(1);
-			}
-
-			try {
-				sendSocket.send(sendPacket);
+				sendReceiveSocket.send(sendPacket);
 			} catch (IOException e) {
 				e.printStackTrace();
 				System.exit(1);
 			}
 
-			System.out.println("TFTPClientConnectionThread: packet sent using port " + sendSocket.getLocalPort());
+			System.out.println("TFTPClientConnectionThread: packet sent using port " + sendReceiveSocket.getLocalPort());
 			System.out.println();
 
 			/*if (request == Request.READ) {
-				transferFiles(fileName, sendSocket.getLocalPort());
+				transferFiles(fileName, sendReceiveSocket.getLocalPort());
 			} else */if (request == Request.WRITE) {
-				receiveFiles(fileName, sendSocket.getLocalPort());
+				receiveFiles(fileName, sendReceiveSocket.getLocalPort());
 			}
 
 			// We're finished with this socket, so close it.
-			sendSocket.close();
+			sendReceiveSocket.close();
 		}
 
-		// write to file
+		/**
+		 * write to file
+		 * @param fileName
+		 * @param sendPort
+		 */
 		public void receiveFiles(String fileName, int sendPort) {			
 			ArrayList<Integer> processedDataBlocks = new ArrayList<>();
 			
 			try {
-				receiveSocket.setSoTimeout(TIMEOUT);
+				sendReceiveSocket.setSoTimeout(TIMEOUT);
 				BufferedOutputStream out = new BufferedOutputStream( new FileOutputStream(serverDirectory + "\\" + fileName));
 				while (true) {
 					byte[] data = new byte[516];
@@ -283,9 +276,9 @@ public class TFTPClientConnectionThread implements Runnable {
 					try {
 						// Block until a datagram is received via sendReceiveSocket, or until
 						// idle for exceptional amount of time
-						receiveSocket.setSoTimeout(300000);
-						receiveSocket.receive(receivePacket);
-						receiveSocket.setSoTimeout(TIMEOUT);
+						sendReceiveSocket.setSoTimeout(300000);
+						sendReceiveSocket.receive(receivePacket);
+						sendReceiveSocket.setSoTimeout(TIMEOUT);
 					} catch(InterruptedIOException ie) {
 						//NOT IMPLEMENTED. Behind current version, might not work with changes
 						System.out.println("Server idle timeout. Closing connection.");
@@ -339,7 +332,7 @@ public class TFTPClientConnectionThread implements Runnable {
 							receivePacket.getPort());
 					
 					try {
-						sendSocket.send(sendPacket);
+						sendReceiveSocket.send(sendPacket);
 					} catch (IOException e) {
 						e.printStackTrace();
 						System.exit(1);
@@ -391,14 +384,19 @@ public class TFTPClientConnectionThread implements Runnable {
 
 		}
 
-		// read files
+		/**
+		 *  read files
+		 * @param filename
+		 * @param sendPort
+		 * @param receivePacket
+		 */
 		public void transferFiles(String filename, int sendPort, DatagramPacket receivePacket) {
 		   ArrayList<Integer> processedACKBlocks = new ArrayList<>();
 		   int blockNum = 1; // You start at data block one when reading from a server.
 		   byte[] data = new byte[100];
 	       receivePacket.setData(data, 0, data.length);;
 	       try {
-				receiveSocket.setSoTimeout(TIMEOUT);
+	    	   sendReceiveSocket.setSoTimeout(TIMEOUT);
 	       } catch (SocketException e1) {
 				e1.printStackTrace();
 	       }
@@ -416,7 +414,7 @@ public class TFTPClientConnectionThread implements Runnable {
 				
 				sendPacket = new DatagramPacket(msg, msg.length, receivePacket.getAddress(), sendPort);
 				try {
-					sendSocket.send(sendPacket);
+					sendReceiveSocket.send(sendPacket);
 			    } catch (IOException e) {
 			        e.printStackTrace();
 			        System.exit(1);
@@ -439,7 +437,7 @@ public class TFTPClientConnectionThread implements Runnable {
 
 				try {
 			           // Block until a datagram is received via sendReceiveSocket.
-			           receiveSocket.receive(receivePacket);
+						sendReceiveSocket.receive(receivePacket);
 			        } catch(InterruptedIOException ie) {
 			        	System.out.println("Server timeout. Resending packet");
 			        	continue;
@@ -490,6 +488,11 @@ public class TFTPClientConnectionThread implements Runnable {
 
 	}
 	
+	/**
+	 * 
+	 * @param fileName
+	 * @return
+	 */
 	private ArrayList<byte[]> readFileIntoBlocks(String fileName) {
 		ArrayList<byte[]> msgList = new ArrayList<>();
 		byte[] dataBuffer = new byte[512];
