@@ -14,7 +14,7 @@ public class TFTPClient {
 	private int connectionPort;
 	private static boolean verboseMode = false; // false for quiet and true for verbose
 	private static String ipAddress = "192.168.1.32";
-	private static String clientDirectory = "C:\\Alexei's Stuff\\Carleton University";
+	private static String clientDirectory = "M:\\SYSC3303_Project";
 	private static boolean finishedRequest = false;
 	private static boolean changeMode = true;
 	private boolean running = true;
