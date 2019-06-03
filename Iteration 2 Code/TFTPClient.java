@@ -16,7 +16,7 @@ public class TFTPClient {
 	private static String clientDirectory = "";
 	private static boolean finishedRequest = false;
 	private boolean running = true;
-	private static final int TIMEOUT = 1000; //Delay for timeout when waiting to receive file 
+	private static final int TIMEOUT = 3000; //Delay for timeout when waiting to receive file 
 	private ArrayList<Integer> processedACKBlocks = new ArrayList<>();
 	
 	// we can run in normal (send directly to server) or test
@@ -73,6 +73,7 @@ public class TFTPClient {
 			// NOT CORRECTLY IMPLEMENTED YET.
 			// THIS SHOULD ONLY PROMPT USER AFTER A REQUEST HAS FULLY COMPLETED
 			// User chooses read or write request
+			
 			while (!(input.equals("1") || input.equals("2") || input.equals("3"))) {
 				System.out.println("\nEnter '1' for read or '2' write request or '3' to quit: ");
 				input = sc.nextLine();
@@ -165,7 +166,6 @@ public class TFTPClient {
 				//sendPacket = new DatagramPacket(msg, len, InetAddress.getLocalHost(), sendPort);
 				// */
 				sendPacket = new DatagramPacket(msg, len, InetAddress.getByName(ipAddress),
-
 				 sendPort);
 			} catch (UnknownHostException e) {
 				e.printStackTrace();
@@ -225,6 +225,7 @@ public class TFTPClient {
 					}
 					received = true;
 					
+					if (run != Mode.TEST) sendPort = receivePacket.getPort();
 					// Process the received datagram.
 					len = receivePacket.getLength();
 					if (verboseMode) {
@@ -251,8 +252,9 @@ public class TFTPClient {
 	
 					//if (!ackVerified) // re-send request
 					if (request == RequestType.WRITE) {
-						processedACKBlocks.add(data[2]*10+data[3]);	
-						transferFiles(fileName, receivePacket.getPort());
+						processedACKBlocks.add(data[2]*10+data[3]);
+						
+						transferFiles(fileName, sendPort);
 					}
 				} else {
 					receiveFiles(fileName);
@@ -288,16 +290,20 @@ public class TFTPClient {
 	 * (IOException e) { e.printStackTrace(); System.exit(1); } } }
 	 */
 
+	/**
+	 * 
+	 * @param fileName
+	 */
 	public void receiveFiles(String fileName) {
 		ArrayList<Integer> processedBlocks = new ArrayList<>();
 		
 		//used to differentiate between read request response and regular file transfer
 		boolean requestResponse = true;
-		int sendPort;
-		if (run == Mode.NORMAL)
-			sendPort = 69;
-		else
+		int sendPort = 69; //will be changed
+		if (run == Mode.TEST)
 			sendPort = 23;
+		/*else
+			sendPort = 69;*/
 		try {
 			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(fileName));
 
@@ -311,7 +317,9 @@ public class TFTPClient {
 					try {
 						// Block until a datagram is received via sendReceiveSocket.
 						sendReceiveSocket.receive(receivePacket);
-						sendPort = receivePacket.getPort();
+						if (run != Mode.TEST)
+							sendPort = receivePacket.getPort();
+						requestResponse = false;
 					}catch(InterruptedIOException io) {
 						System.out.println("Client timed out. resending request.");
 						break;
@@ -324,9 +332,13 @@ public class TFTPClient {
 						// Block until a datagram is received via sendReceiveSocket.
 						sendReceiveSocket.setSoTimeout(300000);
 						sendReceiveSocket.receive(receivePacket);
+						if (run != Mode.TEST)
+							sendPort = receivePacket.getPort();
 						sendReceiveSocket.setSoTimeout(TIMEOUT);
 					}catch(InterruptedIOException io) {
 						System.out.println("Client has exceeded idle time. Cancelling transfer.");
+						finishedRequest = true;
+						break;
 					}catch (IOException e) {
 						e.printStackTrace();
 						System.exit(1);
@@ -405,6 +417,11 @@ public class TFTPClient {
 		}
 	}
 
+	/**
+	 * 
+	 * @param filename
+	 * @param sendPort
+	 */
 	public void transferFiles(String filename, int sendPort) {
 		int blockNum = 1; // Data blocks start at one.
 		byte[] data = new byte[100];
@@ -414,7 +431,7 @@ public class TFTPClient {
 			BufferedInputStream bis = new BufferedInputStream(new FileInputStream(filename));
 		
 			int bytesRead = 0;
-
+			
 			while ((bytesRead = bis.read(dataBuffer, 0, 512)) != -1) {
 				byte[] msg = new byte[bytesRead + 4];
 				msg[0] = 0;
@@ -484,7 +501,11 @@ public class TFTPClient {
 		}
 	}
 
-	// Converts the blocknumber as an int into a 2 byte array
+	/**
+	 * Converts the block number as an int into a 2 byte array
+	 * @param blockNum
+	 * @return
+	 */
 	private byte[] blockNumBytes(int blockNum) {
 		byte[] blockNumArray = new byte[2];
 

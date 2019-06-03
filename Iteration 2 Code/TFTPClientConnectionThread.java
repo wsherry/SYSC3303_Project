@@ -186,7 +186,7 @@ public class TFTPClientConnectionThread implements Runnable {
 		private DatagramPacket receivePacket;
 		private DatagramPacket sendPacket;
 		private boolean verboseMode = false; // false for quiet and true for verbose
-		private static final int TIMEOUT = 1000;
+		private static final int TIMEOUT = 3000;
 
 		private Request request;
 
@@ -266,7 +266,11 @@ public class TFTPClientConnectionThread implements Runnable {
 			sendReceiveSocket.close();
 		}
 
-		// write to file
+		/**
+		 *  write to file
+		 * @param fileName
+		 * @param sendPort
+		 */
 		public void receiveFiles(String fileName, int sendPort) {			
 			ArrayList<Integer> processedDataBlocks = new ArrayList<>();
 			
