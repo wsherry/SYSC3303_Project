@@ -40,6 +40,8 @@ public class TFTPSim {
          // port on the local host machine. This socket will be used to
          // send and receive UDP Datagram packets from the server.
          sendReceiveSocket = new DatagramSocket();
+         
+         sendSocket = new DatagramSocket();
       } catch (SocketException se) {
          se.printStackTrace();
          System.exit(1);
@@ -374,7 +376,7 @@ public class TFTPSim {
 
          // Send the datagram packet to the client via a new socket.
 
-         try {
+        /* try {
             // Construct a new datagram socket and bind it to any port
             // on the local host machine. This socket will be used to
             // send UDP Datagram packets.
@@ -382,7 +384,7 @@ public class TFTPSim {
          } catch (SocketException se) {
             se.printStackTrace();
             System.exit(1);
-         }
+         }*/
 
          try {
             sendSocket.send(sendPacket);
@@ -403,8 +405,10 @@ public class TFTPSim {
          System.out.println("Simulator: packet sent using port " + sendSocket.getLocalPort());
          System.out.println();
          // We're finished with this socket, so close it.
-         sendSocket.close();
-      } // end of loop
+         //sendSocket.close();
+      } // end of loop 
+      
+
    }
 
 	/**
