@@ -361,7 +361,7 @@ public class TFTPClientConnectionThread implements Runnable {
 					} catch (IOException e) {
 						e.printStackTrace();
 						System.exit(1);
-					}
+					}  
 
 					if (verboseMode) {
 						System.out.println("TFTPClientConnectionThread: Sending ACK packet:");

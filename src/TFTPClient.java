@@ -368,7 +368,7 @@ public class TFTPClient {
 						System.out.println("ERROR code 5: ACK Packet sent to wrong port. Waiting for proper DATA.");
 						continue;
 					}
-				}
+				}  
 				
 				System.out.println("Client: Data Packet received.");
 
