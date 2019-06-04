@@ -56,6 +56,38 @@ Alan Lin:
 Ben Bozec:
 -Timeout functionality (can be seen in the features) 
 
+Iteration 3: 
+
+Sherry Wang:
+-Update the following diagrams 
+	-UML diagrame, 
+	-Use Cases
+	-Sequence diagrams
+	-State machine diagram	
+	
+Alexei Tchekansky:
+-Created the simulation for error code 5 in Error simulator
+
+Ben Bozec:
+-Error code 5 handling for the client and server
+
+Alan Lin:
+-Update Error Simulation to have a seperate drop down for error 4 simulations
+-Update Error Simulation to have a seperate drop down for error 5 simulations
+
+Pragya Singh:
+-Read me 
+-Created the error simulator for the four cases for error code 4 (Opcode, Mode , Block number and filename validity)
+
+Added Features Since Iteration 2:
+-Sim starts a new thread, with a different TID and sends the packet to either client or server
+- User is able to select error code 5
+- User is able to select between four different scnerios for error code 4 
+	-Opcode Validity
+	-Block Number Validity
+	-Checking for Valid Modes
+	-Empty or Null File names
+	
 Added Features Since iteration 1:
 -File tranfer of larger and multiple files 
 -Changed inputter IP address for the user 
@@ -78,6 +110,10 @@ The programs allows clients to establish WRQ connections and RRQ connections wit
 Project Overview for Iteration 2:
 The server and client are able to now handle network errors ( lost, delayed, duplicaiton). While having the side sending the data files also be able to have a timeout and retransmit.The UI will also allow the user to pick particular modes they would like to configure the program to run in. 
 
+Project Overview for Iteration 3: 
+Implementing errors that can occur in aTFTP packets that is received.   TFTP
+ERROR packets  should be able to prepared, transmitted,received, and handled (Error Code 4, 5) must be prepared, transmitted,
+received, and handled. There will be an assumption that no input file errors, in this iteration. 
 
 Errors Iteration 2:
 TFTPClientConnection currently doesn’t use port 69 for receiving data
@@ -118,4 +154,4 @@ Installation/setup instructions:
 3. Run client.java as java application and follow the command line prompts. When prompted for the IP adress, paste the IP adress that was copied/noted from the server.
 ** run in the above order**
 
-
+Iteration 3:
