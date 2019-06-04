@@ -200,7 +200,8 @@ public class TFTPSim {
          }
          
          // Test an 'unknown' TID
-         if (mode == Mode.ERR5) {
+         if (mode == Mode.ERR5 && packetCount == packetNumber && receivedType == packetType) {
+             System.out.println("\nSimulator:  sending a packet with an 'unknown' TID from client to server.");
         	 createUnknownTIDTestThread(sendPacket);
          }
          
@@ -351,6 +352,12 @@ public class TFTPSim {
          sendPacket = new DatagramPacket(data, receivePacket.getLength(),
         		 clientAdress, clientPort);
 
+         // Test an 'unknown' TID
+         if (mode == Mode.ERR5 && packetCount == packetNumber && receivedType == packetType) {
+        	 System.out.println("\nSimulator: sending a packet with an 'unknown' TID from server to client.");    	       
+        	 createUnknownTIDTestThread(sendPacket);
+         }
+         
          len = sendPacket.getLength();
          if (verboseMode) {
         	 System.out.println( "Simulator: Sending packet:");
