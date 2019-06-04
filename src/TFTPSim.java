@@ -23,11 +23,15 @@ public class TFTPSim {
    public static enum Type {
 	   RRQ, WRQ, REQ, DATA, ACK
    };
-   public static enum Mode {
-	   NORMAL, LOSS, DELAY, DUPLICATE, ERR4, ERR5
+   public static enum Mode { //error simulation modes
+	   NORMAL, LOSS, DELAY, DUPLICATE, ERROR4, ERROR5
+   };
+   public static enum Err4Mode { //options for simulating error 4
+	   OPCODE, BLOCKNUM, FILENAME, MODE
    };
    
    private static Mode mode = Mode.NORMAL;
+   private static Err4Mode err4Mode;
    
    public TFTPSim()
    {
@@ -202,7 +206,7 @@ public class TFTPSim {
          }
          
          // Test an 'unknown' TID
-         if (mode == Mode.ERR5 && packetCount == packetNumber && receivedType == packetType) {
+         if (mode == Mode.ERROR5 && packetCount == packetNumber && receivedType == packetType) {
              System.out.println("\nSimulator:  sending a packet with an 'unknown' TID from client to server.");
         	 createUnknownTIDTestThread(sendPacket);
          }
@@ -355,7 +359,7 @@ public class TFTPSim {
         		 clientAdress, clientPort);
 
          // Test an 'unknown' TID
-         if (mode == Mode.ERR5 && packetCount == packetNumber && receivedType == packetType) {
+         if (mode == Mode.ERROR5 && packetCount == packetNumber && receivedType == packetType) {
         	 System.out.println("\nSimulator: sending a packet with an 'unknown' TID from server to client.");    	       
         	 createUnknownTIDTestThread(sendPacket);
          }
@@ -421,7 +425,7 @@ public class TFTPSim {
 		// option to set which test mode
 		// loops until valid input (0, 1, 2, 3 or nothing)
 		while (!(input.equals("0") || input.equals("1") || input.equals("2") || input.equals("3")
-				|| input.equals("4") || input.equals("5") || input.equals(""))) { 
+				|| input.equals("4") || input.equals("5") || input.equals(""))) {
 			System.out.print("\nEnter:\n0 to run in normal mode\n1 for simulated loss packet");
 			System.out.print("\n2 for simulated delayed packet\n3 for simulated duplicate packet");
 			System.out.print("\n4 for simulated illegal TFTP operation\n5 for simulated unknown transfer ID");
@@ -432,18 +436,32 @@ public class TFTPSim {
 			if (input.equals("1")) mode = Mode.LOSS;
 			if (input.equals("2")) mode = Mode.DELAY;
 			if (input.equals("3")) mode = Mode.DUPLICATE;
-			if (input.equals("4")) mode = Mode.ERR4;			
-			if (input.equals("5")) mode = Mode.ERR5;		
+			if (input.equals("4")) mode = Mode.ERROR4;			
+			if (input.equals("5")) mode = Mode.ERROR5;		
 		}
 		System.out.println("Running in " + mode + " mode");
+		
+		if (mode == Mode.ERROR4) { //sub menu for error 4 options
+			while (!(input.equals("0") || input.equals("1") || input.equals("2") || input.equals("3"))) {
+				System.out.print("\nEnter:\n0 for error in opcode\n1 for error in block number\n2 for invalid file name (too large or missing)");
+				System.out.print("\n3 for invalid request mode: ");
+				input = sc.nextLine();
+				// setting the mode accordingly
+				if (input.equals("0")) err4Mode = Err4Mode.OPCODE;
+				if (input.equals("1")) err4Mode = Err4Mode.BLOCKNUM;
+				if (input.equals("2")) err4Mode = Err4Mode.FILENAME;
+				if (input.equals("3")) err4Mode = Err4Mode.MODE;
+			}
+			System.out.println("Simulating error 4 with " + err4Mode + " issue.");
+		}
 		
 		if (mode != Mode.NORMAL) {
 			input = "";
 	    	//User inputs to specify which type of packet to lose/delay/duplicate
 			// loops until valid input (0, 1, or 2)
 			while (!(input.equals("0") || input.equals("1") || input.equals("2") || input.equals("3"))) { 
-				System.out.print("\nEnter '0' for " + mode + " RRQ packets, '1' for " + mode + " WRQ packets");
-				System.out.print(", '2' for DATA packets or '3' for " + mode + " ACK packets: ");
+				System.out.print("\nEnter:\n0 for " + mode + " RRQ packets\n1 for " + mode + " WRQ packets");
+				System.out.print("\n2 for DATA packets\nor 3 for " + mode + " ACK packets: ");
 				input = sc.nextLine();
 				// setting the mode accordingly
 				if (input.equals("0")) packetType = Type.RRQ;
