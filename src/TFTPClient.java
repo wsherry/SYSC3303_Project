@@ -226,6 +226,7 @@ public class TFTPClient {
 						e.printStackTrace();
 						System.exit(1);
 					}
+					connectionPort = receivePacket.getPort();
 					received = true;
 					
 					// Process the received datagram.
@@ -345,9 +346,9 @@ public class TFTPClient {
 				
 				//Check if packet came from correct source. Send back ERROR packet code 5 if not.
 				if(connectionPort != receivePacket.getPort()) {
-					System.out.print("Received Packet from unknown source. Responding with ERROR and continuing.");
+					System.out.println("Received Packet from unknown source. Responding with ERROR and continuing.");
 					byte[] err = new byte[] {0,5,0,5};
-					sendPacket = new DatagramPacket(err, err.length, InetAddress.getByName(ipAddress), receivePacket.getPort());
+					sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), receivePacket.getPort());
 					try{
 						sendReceiveSocket.send(sendPacket);
 					}catch(IOException e) {
@@ -364,9 +365,8 @@ public class TFTPClient {
 				//Check if ERROR packet was received
 				if(data[1] == 5) {
 					if(data[3] == 5) {
-						
-					}else {
-						
+						System.out.println("ERROR code 5: ACK Packet sent to wrong port. Waiting for proper DATA.");
+						continue;
 					}
 				}
 				
@@ -494,6 +494,29 @@ public class TFTPClient {
 				if (verboseMode) {		
 					System.out.println("Client: Duplicate ACK data packet received. Ignoring it by not re-sending data block  number [" + data[2]*10+data[3] + "] and waiting for the next datablock.");		
 				}		
+			}
+			
+			//Check if packet came from correct source. Send back ERROR packet code 5 if not.
+			if(connectionPort != receivePacket.getPort()) {
+				System.out.println("Received Packet from unknown source. Responding with ERROR and continuing.");
+				byte[] err = new byte[] {0,5,0,5};
+				sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), receivePacket.getPort());
+				try{
+					sendReceiveSocket.send(sendPacket);
+				}catch(IOException e) {
+					e.printStackTrace();
+					System.exit(1);
+				}
+				i--;
+				continue;
+			}
+			
+			if(receivePacket.getData()[1] == 5) {
+				if(receivePacket.getData()[3] == 5) {
+					System.out.println("ERROR code 5: DATA Packet sent to wrong port. Resending last DATA packet.");
+					i--;
+					continue;
+				}
 			}
 
 			int len = receivePacket.getLength();

@@ -198,11 +198,12 @@ public class TFTPClientConnectionThread implements Runnable {
 				se.printStackTrace();
 				System.exit(0);
 			}
-
+			
 			this.receivePacket = receivePacket;
 			this.request = request;
 			this.verboseMode = verboseMode;
 			doneProcessingRequest = false;
+			connectionPort = receivePacket.getPort();
 		}
 
 		public void run() {
@@ -295,9 +296,32 @@ public class TFTPClientConnectionThread implements Runnable {
 						continue;
 						
 					}
+					
+					//Check if packet came from correct source. Send back ERROR packet code 5 if not.
+					if(connectionPort != receivePacket.getPort()) {
+						System.out.println("Received Packet from unknown source. Responding with ERROR and continuing.");
+						byte[] err = new byte[] {0,5,0,5};
+						sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), receivePacket.getPort());
+						try{
+							sendReceiveSocket.send(sendPacket);
+						}catch(IOException e) {
+							e.printStackTrace();
+							System.exit(1);
+						}
+						continue;
+					}
+					
 					// Process the received datagram.
 					len = receivePacket.getLength();
 					data = receivePacket.getData();
+					
+					if(data[1] == 5) {
+						if(data[3] == 5) {
+							System.out.println("ERROR code 5: ACK Packet sent to wrong port. Waiting for proper DATA.");
+							continue;
+						}
+					}
+					
 					System.out.println("Server: Data Packet received.");
 
 					// Check if it's a duplicate packet. If it is, we still want to send an ACK but not rewrite to the file.
@@ -451,9 +475,34 @@ public class TFTPClientConnectionThread implements Runnable {
 				// Check if the received packet is a duplicate read request from a socket and port that is being handled. If so, ignore the packet and continue waiting.
 				if (establishedCommunications.contains(receivePacket.getSocketAddress().toString()) && (receivePacket.getData()[0] == 0 && receivePacket.getData()[1] == 1)) {
 					System.out.println("Server: Received a duplicate RRQ packet. Ignoring it.");
+					i--;
 					continue;			
 				}
 				
+				//Check if packet came from correct source. Send back ERROR packet code 5 if not.
+				if(sendPort != receivePacket.getPort()) {
+					System.out.println("Received Packet from unknown source. Responding with ERROR and continuing.");
+					byte[] err = new byte[] {0,5,0,5};
+					sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), receivePacket.getPort());
+					try{
+						sendReceiveSocket.send(sendPacket);
+					}catch(IOException e) {
+						e.printStackTrace();
+						System.exit(1);
+					}
+					i--;
+					continue;
+				}
+				
+				//Check if packet received is an ERROR Packet
+				if(receivePacket.getData()[1] == 5) {
+					if(receivePacket.getData()[3] == 5) {
+						System.out.println("ERROR code 5: DATA Packet sent to wrong port. Resending last DATA packet.");
+						i--;
+						continue;
+					}
+				}
+								
 				// Check if the received packet is a duplicate ACK. If it is, then we should not be re-sending the Nth data packet for the ACK. Sorcerer's Apprentice Bug. 
 				if (!processedACKBlocks.contains(data[2]*10+data[3])) {
 					processedACKBlocks.add(data[2]*10+data[3]);
