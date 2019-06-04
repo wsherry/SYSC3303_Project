@@ -453,7 +453,7 @@ public class TFTPSim {
 			   }
 
 
-			   if(rr4Mode==Err4Mode.BLOCKNUM ){
+			   if(err4Mode==Err4Mode.BLOCKNUM ){
 
 				   data[2]=(byte) ((Bnum >> 8) & 0xFF);
 				   data[3]=(byte) (Bnum & 0xFF);
