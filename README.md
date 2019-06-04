@@ -156,3 +156,4 @@ Installation/setup instructions:
 ** run in the above order**
 
 Iteration 3:
+Follow the screen promt
