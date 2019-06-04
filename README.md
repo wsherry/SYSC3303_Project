@@ -74,6 +74,7 @@ Ben Bozec:
 Alan Lin:
 -Update Error Simulation to have a seperate drop down for error 4 simulations
 -Update Error Simulation to have a seperate drop down for error 5 simulations
+-Bug fixes, including issues with send and receiving data packets and changing the client connection to use the same port for sending and receiving data
 
 Pragya Singh:
 -Read me 
