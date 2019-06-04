@@ -188,7 +188,7 @@ public class TFTPSim {
              if (data[1]==4) receivedType = Type.ACK;
              
              if (packetType == receivedType) packetCount++;
-         } 
+         }
          
     	 // Construct a datagram packet that is to be sent to a specified port
          // on a specified host.
@@ -198,6 +198,12 @@ public class TFTPSim {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
          }
+         
+         // Test an 'unknown' TID
+         if (mode == Mode.ERR5) {
+        	 createUnknownTIDTestThread(sendPacket);
+         }
+         
          len = sendPacket.getLength();
          if (verboseMode) {
         	 System.out.println("\nSimulator: sending packet.");
@@ -211,7 +217,7 @@ public class TFTPSim {
          } else {
              System.out.println("Simulator: sending packet.");
          }
-
+         
          // Send the datagram packet to the server via the send/receive socket.
          try {
             sendReceiveSocket.send(sendPacket);
@@ -488,6 +494,66 @@ public class TFTPSim {
 		System.out.println("\n------------------------------------------------------\nConfigerations are now set up.");
 		System.out.println("------------------------------------------------------");
 	}
+	
+	private void createUnknownTIDTestThread(DatagramPacket packet) {
+		Thread unknownTIDThread = new Thread(new unknownTIDTestThread(packet), "Unknown TID Test Thread");
+		unknownTIDThread.start();
+	}
+	
+	/**
+	 * Create a new thread so that we can test invalid TIDs
+	 */
+	private class unknownTIDTestThread implements Runnable {
+		private DatagramPacket packet;
+	
+		public unknownTIDTestThread(DatagramPacket packet) {
+			this.packet = packet;
+		}
+
+		public void run() {
+			try {
+				if (verboseMode) {
+		        	 System.out.println("Simulator: Starting a new thread to simulate an invalid TID.");
+				}
+				// Create a new socket with a new/different TID.
+				DatagramSocket socket = new DatagramSocket();
+
+				// Send the packet using this new TID
+				socket.send(packet);
+				
+				// New packet to receive the (expected) error from the host.
+				byte[] data = new byte[516];
+		        DatagramPacket errorPacket = new DatagramPacket(data, data.length);
+				
+				// Should receive an invalid TID error packet
+				socket.receive(errorPacket);
+				
+				// TODO verify that it is an error packet and that the error packet has a valid error code???
+				if (verboseMode) {
+					int len = errorPacket.getLength();
+					// Process the received datagram.
+					System.out.println("Simulator: Packet received:");
+					System.out.println("From host: " + receivePacket.getAddress());
+					System.out.println("Host port: " + receivePacket.getPort());
+					System.out.println("Length: " + len);
+					System.out.println("Containing: ");
+					for (int j=0; j<len; j++) {
+						System.out.println("byte " + j + " " + data[j]);
+					}
+	            }
+			
+				socket.close();
+			}
+			catch (IOException e) {
+				e.printStackTrace();
+				return;
+			} finally {
+				if (verboseMode) {
+					System.out.println("UnknownTIDTransferHandler thread terminated.\n");
+				}
+			}
+		}
+	}	
 
    public static void main( String args[] )
    {
