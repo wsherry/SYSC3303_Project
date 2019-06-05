@@ -52,6 +52,16 @@ public class TFTPClientConnectionThread implements Runnable {
 	public void closeSocket() {
 		receiveSocket.close();
 	}
+	
+	public void verboseMode(InetAddress inetAddress, int port, int length, byte[] data) {
+		System.out.println("Destination Host: " + inetAddress);
+		System.out.println("Destination Host Port: " + port);
+		System.out.println("Length: " + length);
+		System.out.println("Containing: ");
+		for (int j = 0; j < length; j++) {
+			System.out.println("byte " + j + " " + data[j]);
+		}
+	}
 
 	public void run() {
 		int len, j = 0, k = 0;
@@ -89,17 +99,8 @@ public class TFTPClientConnectionThread implements Runnable {
 				len = receivePacket.getLength();
 				if (verboseMode) {
 					System.out.println("Server: Packet received:");
-					System.out.println("From host: " + receivePacket.getAddress());
-					System.out.println("Host port: " + receivePacket.getPort());
-					System.out.println("Length: " + len);
-					System.out.println("Containing: ");
-					// print the bytes
-					for (j = 0; j < len; j++) {
-						System.out.println("byte " + j + " " + data[j]);
-					}
-				} else {
-					System.out.println("Server: Packet received.");
-				}
+					verboseMode(receivePacket.getAddress(), receivePacket.getPort(), len, data);
+				} 
 
 				// Form a String from the byte array.
 				String received = new String(data, 0, len);
@@ -226,15 +227,7 @@ public class TFTPClientConnectionThread implements Runnable {
 			int len = sendPacket.getLength();
 			if (verboseMode) {
 				System.out.println("TFTPClientConnectionThread: Sending packet:");
-				System.out.println("To host: " + sendPacket.getAddress());
-				System.out.println("Destination host port: " + sendPacket.getPort());
-				System.out.println("Length: " + len);
-				System.out.println("Containing: ");
-				for (int j = 0; j < len; j++) {
-					System.out.println("byte " + j + " " + response[j]);
-				}
-			} else {
-				System.out.println("Server: Packet sent.");
+				verboseMode(sendPacket.getAddress(), sendPacket.getPort(), len, response);
 			}
 
 			try {
@@ -340,15 +333,9 @@ public class TFTPClientConnectionThread implements Runnable {
 							// TODO We should send an Nth ACK for the Nth duplicate data packet that was received.
 						}
 					}
-
+					
 					if (verboseMode) {
-						System.out.println("From host: " + receivePacket.getAddress());
-						System.out.println("Host port: " + receivePacket.getPort());
-						System.out.println("Length: " + len);
-						System.out.println("Containing: ");
-						for (int j = 0; j < len; j++) {
-							System.out.println("byte " + j + " " + data[j]);
-						}
+						verboseMode(receivePacket.getAddress(), receivePacket.getPort(), len, data);
 					}
 					
 					byte[] ack = new byte[] { 0, 4, data[2], data[3] };
@@ -361,19 +348,11 @@ public class TFTPClientConnectionThread implements Runnable {
 					} catch (IOException e) {
 						e.printStackTrace();
 						System.exit(1);
-					}  
+					} 
 
 					if (verboseMode) {
 						System.out.println("TFTPClientConnectionThread: Sending ACK packet:");
-						System.out.println("To host: " + receivePacket.getAddress());
-						System.out.println("Destination host port: " + receivePacket.getPort());
-						System.out.println("Length: " + sendPacket.getLength());
-						System.out.println("Containing: ");
-						for (int j = 0; j < sendPacket.getLength(); j++) {
-							System.out.println("byte " + j + " " + ack[j]);
-						}
-					} else {
-						System.out.println("Server: ACK Packet sent.");
+						verboseMode(receivePacket.getAddress(), receivePacket.getPort(), sendPacket.getLength(), ack);
 					}
 					
 					if (len < 516) {
@@ -447,15 +426,7 @@ public class TFTPClientConnectionThread implements Runnable {
 				
 				if (verboseMode) {
 					System.out.println("Server: Packet sent:");
-					System.out.println("From host: " + sendPacket.getAddress());
-					System.out.println("Host port: " + sendPacket.getPort());
-					System.out.println("Length: " + sendPacket.getLength());
-					System.out.println("Containing: ");
-					for (int j = 0; j < sendPacket.getLength(); j++) {
-						System.out.println("byte " + j + " " + msg[j]);
-					}
-				} else {
-					System.out.println("Server: Packet sent.");
+					verboseMode(sendPacket.getAddress(), sendPacket.getPort(), sendPacket.getLength(), msg);
 				}
 
 				System.out.println("Server: Waiting for packet.");
@@ -513,18 +484,9 @@ public class TFTPClientConnectionThread implements Runnable {
 				}
 
 				   int len = receivePacket.getLength();
-				   
 					if (verboseMode) {
 						System.out.println("Server: Packet received:");
-						System.out.println("From host: " + receivePacket.getAddress());
-						System.out.println("Host port: " + receivePacket.getPort());
-						System.out.println("Length: " + len);
-						System.out.println("Containing: ");
-						for (int j = 0; j < len; j++) {
-							System.out.println("byte " + j + " " + data[j]);
-						}
-					} else {
-						System.out.println("Server: Packet received.");
+						verboseMode(receivePacket.getAddress(), receivePacket.getPort(), len, data);
 					}
 
 					if (sendPacket.getLength() < 516) {

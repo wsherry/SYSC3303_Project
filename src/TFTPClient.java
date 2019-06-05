@@ -20,18 +20,9 @@ public class TFTPClient {
 	private boolean running = true;
 	private static final int TIMEOUT = 3000; //Delay for timeout when waiting to receive file 
 	private ArrayList<Integer> processedACKBlocks = new ArrayList<>();
-	
-	// we can run in normal (send directly to server) or test
-	// (send to simulator) mode
-	public static enum Mode {
-		NORMAL, TEST
-	};
-
+	public static enum Mode { NORMAL, TEST };
 	private static Mode run = Mode.NORMAL;
-
-	public static enum RequestType {
-		READ, WRITE
-	};
+	public static enum RequestType {READ, WRITE};
 
 	private static RequestType request;
 
@@ -54,7 +45,6 @@ public class TFTPClient {
 		// user toggle verbose or quiets mode
 		String input = "";
 		boolean received = false;
-
 		byte readWrite = (byte) 1; // default value for initialization
 
 		while (running) {
@@ -69,7 +59,6 @@ public class TFTPClient {
 						configClient();
 				}
 				finishedRequest = false; // set finishedRequest to false so the user only gets prompt after a request
-											// finishes
 			}
 
 			// NOT CORRECTLY IMPLEMENTED YET.
@@ -137,8 +126,6 @@ public class TFTPClient {
 
 			// now add a 0 byte
 			msg[fn.length + 2] = 0;
-
-			// now add "octet" (or "netascii")
 			mode = "octet";
 			// convert to bytes
 			md = mode.getBytes();
@@ -166,9 +153,6 @@ public class TFTPClient {
 			// address of the local host.
 			// 69 - the destination port number on the destination host.
 			try {
-
-				//sendPacket = new DatagramPacket(msg, len, InetAddress.getLocalHost(), sendPort);
-				// */
 				sendPacket = new DatagramPacket(msg, len, InetAddress.getByName(ipAddress), sendPort);
 			} catch (UnknownHostException e) {
 				e.printStackTrace();
@@ -178,16 +162,8 @@ public class TFTPClient {
 			len = sendPacket.getLength();
 			if (verboseMode) {
 				System.out.println("Client: sending packet.");
-				System.out.println("To host: " + sendPacket.getAddress());
-				System.out.println("Destination host port: " + sendPacket.getPort());
-				System.out.println("Length: " + len);
-				System.out.println("Containing: ");
-				for (j = 0; j < len; j++) {
-					System.out.println("byte " + j + " " + msg[j]);
-				}
-			} else {
-				System.out.println("Client: sending packet.");
-			}
+				verboseMode(sendPacket.getAddress(), sendPacket.getPort(), len, msg);
+			} 
 
 			// Form a String from the byte array, and print the string.
 			String sending = new String(msg, 0, len);
@@ -232,17 +208,10 @@ public class TFTPClient {
 					// Process the received datagram.
 					if (run != Mode.TEST) sendPort = receivePacket.getPort();
 					len = receivePacket.getLength();
+					
 					if (verboseMode) {
 						System.out.println("Client: Packet received:");
-						System.out.println("From host: " + receivePacket.getAddress());
-						System.out.println("Host port: " + receivePacket.getPort());
-						System.out.println("Length: " + len);
-						System.out.println("Containing: ");
-						for (j = 0; j < len; j++) {
-							System.out.println("byte " + j + " " + data[j]);
-						}
-					} else {
-						System.out.println("Client: Packet received.");
+						verboseMode(receivePacket.getAddress(), receivePacket.getPort(), len, data);						
 					}
 	
 					boolean ackVerified = false;
@@ -272,26 +241,10 @@ public class TFTPClient {
 		// We're finished, so close the socket.
 		sendReceiveSocket.close();
 	}
-
-	/*
-	 * public void receiveFiles(String fileName, int sendPort) { byte[] data = new
-	 * byte[516]; int len = 516; receivePacket = new DatagramPacket(data,
-	 * data.length); System.out.println("Client: Waiting for data packet."); while
-	 * (len == 516) { try { // Block until a datagram is received via
-	 * sendReceiveSocket. sendReceiveSocket.receive(receivePacket); } catch
-	 * (IOException e) { e.printStackTrace(); System.exit(1); } // Process the
-	 * received datagram. len = receivePacket.getLength();
-	 * System.out.println("Client: Data Packet received."); if (verboseMode) {
-	 * System.out.println("From host: " + receivePacket.getAddress());
-	 * System.out.println("Host port: " + receivePacket.getPort());
-	 * System.out.println("Length: " + len); System.out.println("Containing: "); for
-	 * (int j = 0; j < len; j++) { System.out.println("byte " + j + " " + data[j]);
-	 * } } byte[] ack = new byte[] { 0, 4, 0, 0 }; try { sendPacket = new
-	 * DatagramPacket(ack, ack.length, InetAddress.getByName(ipAddress), sendPort);
-	 * } catch (UnknownHostException e1) { // TODO Auto-generated catch block
-	 * e1.printStackTrace(); } try { sendReceiveSocket.send(sendPacket); } catch
-	 * (IOException e) { e.printStackTrace(); System.exit(1); } } }
-	 */
+	
+	public void sendPacket() {
+		
+	}
 
 	/**
 	 * Receives for read request
@@ -390,13 +343,7 @@ public class TFTPClient {
 				}		
 
 				if (verboseMode) {
-					System.out.println("From host: " + receivePacket.getAddress());
-					System.out.println("Host port: " + receivePacket.getPort());
-					System.out.println("Length: " + len);
-					System.out.println("Containing: ");
-					for (int j = 0; j < len; j++) {
-						System.out.println("byte " + j + " " + data[j]);
-					}
+					verboseMode(receivePacket.getAddress(), receivePacket.getPort(), len, data);
 				}
 
 				byte[] ack = new byte[] { 0, 4, data[2], data[3]};
@@ -412,16 +359,9 @@ public class TFTPClient {
 
 				if (verboseMode) {
 					System.out.println("Client: Sending ACK packet:");
-					System.out.println("To host: " + receivePacket.getAddress());
-					System.out.println("Destination host port: " + receivePacket.getPort());
-					System.out.println("Length: " + sendPacket.getLength());
-					System.out.println("Containing: ");
-					for (int j = 0; j < sendPacket.getLength(); j++) {
-						System.out.println("byte " + j + " " + ack[j]);
-					}
-				} else {
-					System.out.println("Client: ACK Packet sent.");
+					verboseMode(receivePacket.getAddress(), receivePacket.getPort(), sendPacket.getLength(), ack);
 				}
+				
 				if (len < 516) {
 					System.out.println("Received all data packets");
 					finishedRequest = true;
@@ -438,6 +378,16 @@ public class TFTPClient {
 		} catch (IOException e2) {
 			// TODO Auto-generated catch block
 			e2.printStackTrace();
+		}
+	}
+	
+	public void verboseMode(InetAddress inetAddress, int port, int length, byte[] data) {
+		System.out.println("Host: " + inetAddress);
+		System.out.println("Destination host port: " + port);
+		System.out.println("Length: " + length);
+		System.out.println("Containing: ");
+		for (int j = 0; j < length; j++) {
+			System.out.println("byte " + j + " " + data[j]);
 		}
 	}
 
@@ -523,15 +473,7 @@ public class TFTPClient {
 			if (verboseMode) {
 				System.out.println("Client: Packet received:");
 				System.out.println("Block number: " + receivePacket.getData()[2] + receivePacket.getData()[3]);
-				System.out.println("From host: " + receivePacket.getAddress());
-				System.out.println("Host port: " + receivePacket.getPort());
-				System.out.println("Length: " + len);
-				System.out.println("Containing: ");
-				for (int j = 0; j < len; j++) {
-					System.out.println("byte " + j + " " + data[j]);
-				}
-			} else {
-				System.out.println("Client: Packet received.");
+				verboseMode(receivePacket.getAddress(), receivePacket.getPort(), len, data);
 			}
 			blockNum++;
 
