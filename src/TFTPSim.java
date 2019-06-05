@@ -411,7 +411,61 @@ public class TFTPSim {
          // We're finished with this socket, so close it.
          //sendSocket.close();
       } // end of loop 
-      
+	  if(err4Mode==Err4Mode.OPCODE){
+		   data[0]=9
+		   data[1]=9
+		   DatagramPacket serverPacket= new DatagramPacket (data, data.length, clientAdress,clientPort);
+		   sendSocket = new DatagramSocket();
+		   sendSocket.send(serverPacket);
+		   sendSocket.close();
+	   }
+
+	   if(err4Mode==Err4Mode.FILENAME ) {
+		   for (int i = 2 i < data.length(); i++) {
+			   if (data[i] != 0) {
+				   Byte[] temporary = new byte[data.length - i - 2];
+				   if (receivedType = Type.RRQ) {
+					   temporary[0] = 0;
+					   temporary[1] = 1;
+				   }
+				   if (receivedType = Type.RRQ) {
+					   temporary[0] = 0;
+					   temporary[1] = 2;
+				   }
+				   System.arraycopy(data, i, temperary, 2, temperary.length - 2);
+				   DatagramPacket serverPacket = new DatagramPacket(temporary, temperary.length, clientAdress, clientPort);
+				   sendSocket = new DatagramSocket();
+				   sendSocket.send(serverPacket);
+				   sendSocket.close();
+			   }
+		   }
+	   }
+		if(err4Mode==Err4Mode.MODE ){
+				   Byte[ ] random=(“P”).getBytes();
+				   Arrays.copyOf(data, data-1);
+				   Byte [ ] temporary = new byte[data.length+random.length+1];
+				   System.arraycopy(data,0,temperary,0,data.length);
+				   System.arraycopy(random,0,temperary,data.length,random.length);
+				   temporary[temperary.length-1]=0;
+				   DatagramPacket serverPacket= new DatagramPacket (temporary, temperary.length, clientAdress,clientPort);
+				   sendSocket = new DatagramSocket();
+				   sendSocket.send(serverPacket);
+				   sendSocket.close();
+
+			   }
+
+
+		if(err4Mode==Err4Mode.BLOCKNUM ){
+
+				   data[2]=(byte) ((Bnum >> 8) & 0xFF);
+				   data[3]=(byte) (Bnum & 0xFF);
+				   DatagramPacket serverPacket= new DatagramPacket (data, data.length, clientAdress,clientPort);
+				   sendSocket = new DatagramSocket();
+				   sendSocket.send(serverPacket);
+				   sendSocket.close();
+
+		}
+  
 
    }
 
