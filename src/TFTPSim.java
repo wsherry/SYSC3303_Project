@@ -44,7 +44,9 @@ public class TFTPSim {
          // port on the local host machine. This socket will be used to
          // send and receive UDP Datagram packets from the server.
          sendReceiveSocket = new DatagramSocket();
-         
+         // Construct a new datagram socket and bind it to any port
+         // on the local host machine. This socket will be used to
+         // send UDP Datagram packets.
          sendSocket = new DatagramSocket();
       } catch (SocketException se) {
          se.printStackTrace();
@@ -55,7 +57,7 @@ public class TFTPSim {
    /*
     * 
     */
-   public void passOnTFTP()
+   public void passOnTFTP() throws IOException
    {
       byte[] data;
       
@@ -198,18 +200,22 @@ public class TFTPSim {
          
     	 // Construct a datagram packet that is to be sent to a specified port
          // on a specified host.
-         try {
-        	 sendPacket = new DatagramPacket(data, len, InetAddress.getLocalHost(), serverPort);
-         } catch (UnknownHostException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-         }
-         
-         // Test an 'unknown' TID
-         if (mode == Mode.ERROR5 && packetCount == packetNumber && receivedType == packetType) {
-             System.out.println("\nSimulator:  sending a packet with an 'unknown' TID from client to server.");
-        	 createUnknownTIDTestThread(sendPacket);
-         }
+         if (mode == Mode.ERROR4 && packetCount == packetNumber+1 && receivedType == packetType) {
+        	 sendPacket = error4Packet(data, serverPort, InetAddress.getLocalHost());
+  	     } else {
+	         try {
+	        	 sendPacket = new DatagramPacket(data, len, InetAddress.getLocalHost(), serverPort);
+	         } catch (UnknownHostException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+	         }
+	         
+	         // Test an 'unknown' TID
+	         if (mode == Mode.ERROR5 && packetCount == packetNumber && receivedType == packetType) {
+	             System.out.println("\nSimulator:  sending a packet with an 'unknown' TID from client to server.");
+	        	 createUnknownTIDTestThread(sendPacket);
+	         }
+  	     }
          
          len = sendPacket.getLength();
          if (verboseMode) {
@@ -309,7 +315,7 @@ public class TFTPSim {
   	            e.printStackTrace();
   	            System.exit(1);
   	        }
-          }
+  	     }
          
          //Lose the packet if selected
          if (mode == Mode.LOSS && packetCount == packetNumber && receivedType == packetType) {
@@ -353,10 +359,14 @@ public class TFTPSim {
              if (packetType == receivedType) packetCount++;
          } 
          
-		 // Construct a datagram packet that is to be sent to a specified port
-         // on a specified host.
-         sendPacket = new DatagramPacket(data, receivePacket.getLength(),
-        		 clientAdress, clientPort);
+         if (mode == Mode.ERROR4 && packetCount == packetNumber+1 && receivedType == packetType) {
+        	 sendPacket = error4Packet(data, serverPort, InetAddress.getLocalHost());
+  	     } else {
+			 // Construct a datagram packet that is to be sent to a specified port
+	         // on a specified host.
+	         sendPacket = new DatagramPacket(data, receivePacket.getLength(),
+	        		 clientAdress, clientPort);
+  	     }
 
          // Test an 'unknown' TID
          if (mode == Mode.ERROR5 && packetCount == packetNumber && receivedType == packetType) {
@@ -380,7 +390,7 @@ public class TFTPSim {
 
          // Send the datagram packet to the client via a new socket.
 
-        /* try {
+         /*try {
             // Construct a new datagram socket and bind it to any port
             // on the local host machine. This socket will be used to
             // send UDP Datagram packets.
@@ -410,63 +420,7 @@ public class TFTPSim {
          System.out.println();
          // We're finished with this socket, so close it.
          //sendSocket.close();
-      } // end of loop 
-	  if(err4Mode==Err4Mode.OPCODE){
-		   data[0]=9
-		   data[1]=9
-		   DatagramPacket serverPacket= new DatagramPacket (data, data.length, clientAdress,clientPort);
-		   sendSocket = new DatagramSocket();
-		   sendSocket.send(serverPacket);
-		   sendSocket.close();
-	   }
-
-	   if(err4Mode==Err4Mode.FILENAME ) {
-		   for (int i = 2 i < data.length(); i++) {
-			   if (data[i] != 0) {
-				   Byte[] temporary = new byte[data.length - i - 2];
-				   if (receivedType = Type.RRQ) {
-					   temporary[0] = 0;
-					   temporary[1] = 1;
-				   }
-				   if (receivedType = Type.RRQ) {
-					   temporary[0] = 0;
-					   temporary[1] = 2;
-				   }
-				   System.arraycopy(data, i, temperary, 2, temperary.length - 2);
-				   DatagramPacket serverPacket = new DatagramPacket(temporary, temperary.length, clientAdress, clientPort);
-				   sendSocket = new DatagramSocket();
-				   sendSocket.send(serverPacket);
-				   sendSocket.close();
-			   }
-		   }
-	   }
-		if(err4Mode==Err4Mode.MODE ){
-				   Byte[ ] random=(“P”).getBytes();
-				   Arrays.copyOf(data, data-1);
-				   Byte [ ] temporary = new byte[data.length+random.length+1];
-				   System.arraycopy(data,0,temperary,0,data.length);
-				   System.arraycopy(random,0,temperary,data.length,random.length);
-				   temporary[temperary.length-1]=0;
-				   DatagramPacket serverPacket= new DatagramPacket (temporary, temperary.length, clientAdress,clientPort);
-				   sendSocket = new DatagramSocket();
-				   sendSocket.send(serverPacket);
-				   sendSocket.close();
-
-			   }
-
-
-		if(err4Mode==Err4Mode.BLOCKNUM ){
-
-				   data[2]=(byte) ((Bnum >> 8) & 0xFF);
-				   data[3]=(byte) (Bnum & 0xFF);
-				   DatagramPacket serverPacket= new DatagramPacket (data, data.length, clientAdress,clientPort);
-				   sendSocket = new DatagramSocket();
-				   sendSocket.send(serverPacket);
-				   sendSocket.close();
-
-		}
-  
-
+      } // end of loop
    }
 
 	/**
@@ -578,6 +532,10 @@ public class TFTPSim {
 		System.out.println("------------------------------------------------------");
 	}
 	
+	/**
+	 * 
+	 * @param packet
+	 */
 	private void createUnknownTIDTestThread(DatagramPacket packet) {
 		Thread unknownTIDThread = new Thread(new unknownTIDTestThread(packet), "Unknown TID Test Thread");
 		unknownTIDThread.start();
@@ -636,13 +594,78 @@ public class TFTPSim {
 				}
 			}
 		}
-	}	
+	}
+	
+	/**
+	 * 
+	 * @param data
+	 * @param port
+	 * @param clientAdress
+	 * @return
+	 */
+	public DatagramPacket error4Packet(byte[] data, int port, InetAddress clientAdress) {
+		DatagramPacket sendPacket = null;
+		if(err4Mode==Err4Mode.OPCODE){
+			data[0]=9;
+			data[1]=9;
+			sendPacket= new DatagramPacket (data, data.length, clientAdress, port);
+	    }
+		   
+        if(err4Mode==Err4Mode.FILENAME ) {
+        	byte[] temporary = new byte [data.length];
+        	if (packetType == Type.RRQ) {
+        		temporary[0] = 0;
+       		  	temporary[1] = 1;
+       		  	temporary[2] = 0;
+       	  	}
+       	  	if (packetType == Type.WRQ) {
+       	  		temporary[0] = 0;
+       	  		temporary[1] = 2;
+       	  		temporary[2] = 0;
+       	  	}
+       	  	
+       	  	int fileNamelength=0;
+       	  	for (int i = 2; i < data.length; i++) {
+       	  		if (data[i] == 0) break;
+       	  		fileNamelength++;
+       	  	}	
+       	  	System.arraycopy(data, fileNamelength+2, temporary, 3, data.length-fileNamelength-2);
+       	  	sendPacket = new DatagramPacket (temporary, temporary.length, clientAdress, port);
+        }
+        
+        if(err4Mode==Err4Mode.MODE ){
+        	byte[] temporary = new byte [data.length];
+	        int j;
+	        for (j = 2; j < data.length; j++) {
+				if (data[j] == 0)
+					break;
+			}
+	        int k;
+	        for (k = j + 1; k < data.length; k++) {
+				if (data[k] == 0)
+					break;
+			}
+	        System.arraycopy(data, 0, temporary, 0, k);
+       	  	System.arraycopy("pctet".getBytes(), 0, temporary , k+1, data.length);
+       	  	sendPacket = new DatagramPacket (temporary, temporary.length, clientAdress, port);
+	    }
+        /*
+        if(err4Mode==Err4Mode.BLOCKNUM ){
+        	int Bnum=5;
+       	 	data[2]=(byte) ((Bnum >> 8) & 0xFF);
+       	 	data[3]=(byte) (Bnum & 0xFF);
+       	 	DatagramPacket serverPacket= new DatagramPacket (data, data.length, clientAdress, );
+		}*/
+	
+		
+		return sendPacket;
+	}
 
-   public static void main( String args[] )
-   {
-	   TFTPSim sim = new TFTPSim();
-	   System.out.println("Welcome to the TFTP Error Simulation application");
-	   configSim();
-	   sim.passOnTFTP();
-   }
+	public static void main( String args[] ) throws IOException
+	{
+		TFTPSim sim = new TFTPSim();
+		System.out.println("Welcome to the TFTP Error Simulation application");
+		configSim();
+		sim.passOnTFTP();
+	}
 }
