@@ -13,7 +13,7 @@ public class TFTPClient {
 	private DatagramSocket sendReceiveSocket;
 	private int connectionPort;
 	private static boolean verboseMode = false; // false for quiet and true for verbose
-	private static String ipAddress = "192.168.1.32";
+	private static String ipAddress = "192.168.56.1";
 	private static String clientDirectory = "M:\\SYSC3303_Project";
 	private static boolean finishedRequest = false;
 	private static boolean changeMode = true;
@@ -185,10 +185,8 @@ public class TFTPClient {
 				for (j = 0; j < len; j++) {
 					System.out.println("byte " + j + " " + msg[j]);
 				}
-			} else {
-				System.out.println("Client: sending packet.");
 			}
-
+			
 			// Form a String from the byte array, and print the string.
 			String sending = new String(msg, 0, len);
 			System.out.println(sending);
@@ -241,8 +239,6 @@ public class TFTPClient {
 						for (j = 0; j < len; j++) {
 							System.out.println("byte " + j + " " + data[j]);
 						}
-					} else {
-						System.out.println("Client: Packet received.");
 					}
 	
 					boolean ackVerified = false;
@@ -383,10 +379,8 @@ public class TFTPClient {
 					}
 					processedBlocks.add(data[2]*10+data[3]);
 				} else {					
-					if (verboseMode) {		
-						System.out.println("Client: Duplicate data packet received. Ignoring it by not writing it again.");	
-						// TODO We should send an Nth ACK for the Nth duplicate data packet that was received.
-					}		
+					System.out.println("Client: Duplicate data packet received. Ignoring it by not writing it again.");	
+					// TODO We should send an Nth ACK for the Nth duplicate data packet that was received.	
 				}		
 
 				if (verboseMode) {
@@ -419,9 +413,8 @@ public class TFTPClient {
 					for (int j = 0; j < sendPacket.getLength(); j++) {
 						System.out.println("byte " + j + " " + ack[j]);
 					}
-				} else {
-					System.out.println("Client: ACK Packet sent.");
 				}
+				
 				if (len < 516) {
 					System.out.println("Received all data packets");
 					finishedRequest = true;
@@ -491,9 +484,7 @@ public class TFTPClient {
 			if (!processedACKBlocks.contains(data[2]*10+data[3])) {		
 				processedACKBlocks.add(data[2]*10+data[3]);		
 			}  else {		
-				if (verboseMode) {		
-					System.out.println("Client: Duplicate ACK data packet received. Ignoring it by not re-sending data block  number [" + data[2]*10+data[3] + "] and waiting for the next datablock.");		
-				}		
+				System.out.println("Client: Duplicate ACK data packet received. Ignoring it by not re-sending data block  number [" + data[2]*10+data[3] + "] and waiting for the next datablock.");			
 			}
 			
 			//Check if packet came from correct source. Send back ERROR packet code 5 if not.
@@ -530,8 +521,6 @@ public class TFTPClient {
 				for (int j = 0; j < len; j++) {
 					System.out.println("byte " + j + " " + data[j]);
 				}
-			} else {
-				System.out.println("Client: Packet received.");
 			}
 			blockNum++;
 

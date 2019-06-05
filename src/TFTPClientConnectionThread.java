@@ -233,8 +233,6 @@ public class TFTPClientConnectionThread implements Runnable {
 				for (int j = 0; j < len; j++) {
 					System.out.println("byte " + j + " " + response[j]);
 				}
-			} else {
-				System.out.println("Server: Packet sent.");
 			}
 
 			try {
@@ -335,10 +333,8 @@ public class TFTPClientConnectionThread implements Runnable {
 						}
 						processedDataBlocks.add(data[2]*10+data[3]);
 					}  else {
-						if (verboseMode) {
-							System.out.println("Server: Duplicate data packet received. Ignoring it by not writing it again.");
-							// TODO We should send an Nth ACK for the Nth duplicate data packet that was received.
-						}
+						System.out.println("Server: Duplicate data packet received. Ignoring it by not writing it again.");
+						// TODO We should send an Nth ACK for the Nth duplicate data packet that was received.
 					}
 
 					if (verboseMode) {
@@ -372,8 +368,6 @@ public class TFTPClientConnectionThread implements Runnable {
 						for (int j = 0; j < sendPacket.getLength(); j++) {
 							System.out.println("byte " + j + " " + ack[j]);
 						}
-					} else {
-						System.out.println("Server: ACK Packet sent.");
 					}
 					
 					if (len < 516) {
@@ -454,10 +448,8 @@ public class TFTPClientConnectionThread implements Runnable {
 					for (int j = 0; j < sendPacket.getLength(); j++) {
 						System.out.println("byte " + j + " " + msg[j]);
 					}
-				} else {
-					System.out.println("Server: Packet sent.");
 				}
-
+				
 				System.out.println("Server: Waiting for packet.");
 
 				try {
@@ -507,9 +499,7 @@ public class TFTPClientConnectionThread implements Runnable {
 				if (!processedACKBlocks.contains(data[2]*10+data[3])) {
 					processedACKBlocks.add(data[2]*10+data[3]);
 				}  else {
-					if (verboseMode) {
-						System.out.println("Server: Duplicate ACK data packet received. Ignoring it by not re-sending data block number [" + data[2]*10+data[3] + "] and waiting for the next datablock.");
-					}
+					System.out.println("Server: Duplicate ACK data packet received. Ignoring it by not re-sending data block number [" + data[2]*10+data[3] + "] and waiting for the next datablock.");
 				}
 
 				   int len = receivePacket.getLength();
@@ -523,10 +513,8 @@ public class TFTPClientConnectionThread implements Runnable {
 						for (int j = 0; j < len; j++) {
 							System.out.println("byte " + j + " " + data[j]);
 						}
-					} else {
-						System.out.println("Server: Packet received.");
 					}
-
+					
 					if (sendPacket.getLength() < 516) {
 						System.out.println("Server: Last packet sent.");
 					}
