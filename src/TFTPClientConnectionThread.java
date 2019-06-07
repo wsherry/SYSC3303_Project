@@ -198,11 +198,10 @@ public class TFTPClientConnectionThread extends TFTPFunctions implements Runnabl
 			}
 
 			sendPacketFromSocket(sendReceiveSocket, sendPacket);
-			System.out
-					.println("TFTPClientConnectionThread: packet sent using port " + sendReceiveSocket.getLocalPort());
+			System.out.println("TFTPClientConnectionThread: packet sent using port " + sendReceiveSocket.getLocalPort());
 
 			//receiveFiles(fileName, sendReceiveSocket.getLocalPort());
-			receiveFiles(fileName, sendReceiveSocket.getLocalPort(), "Server", sendReceiveSocket, true, false, verboseMode, connectionPort);
+			receiveFiles(serverDirectory + "\\" + fileName, sendReceiveSocket.getLocalPort(), "Server", sendReceiveSocket, true, false, verboseMode, connectionPort);
 			// We're finished with this socket, so close it.
 			sendReceiveSocket.close();
 		}
