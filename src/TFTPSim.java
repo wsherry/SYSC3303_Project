@@ -45,9 +45,6 @@ public class TFTPSim extends TFTPFunctions {
          // port on the local host machine. This socket will be used to
          // send and receive UDP Datagram packets from the server.
          sendReceiveSocket = new DatagramSocket();
-         // Construct a new datagram socket and bind it to any port
-         // on the local host machine. This socket will be used to
-         // send UDP Datagram packets.
          sendSocket = new DatagramSocket();
       } catch (SocketException se) {
          se.printStackTrace();
@@ -66,8 +63,6 @@ public class TFTPSim extends TFTPFunctions {
       InetAddress clientAdress;
 
       for(;;) { // loop forever
-         // Construct a DatagramPacket for receiving packets up
-         // to 100 bytes long (the length of the byte array).
          
          data = new byte[516];
          receivePacket = new DatagramPacket(data, data.length);
@@ -86,14 +81,7 @@ public class TFTPSim extends TFTPFunctions {
          clientPort = receivePacket.getPort();
          if (verboseMode) {
         	 System.out.println("Simulator: Packet received:");
-        	 System.out.println("From host: " + receivePacket.getAddress());
-        	 System.out.println("Host port: " + clientPort);
-        	 System.out.println("Length: " + len);
-        	 System.out.println("Containing: " );
-        	 // print the bytes
-        	 for (j=0;j<len;j++) {
-        		 System.out.println("byte " + j + " " + data[j]);
-        	 }
+        	 verboseMode(receivePacket.getAddress(), clientPort, len, data);
          }
          
          clientAdress = receivePacket.getAddress();
@@ -130,23 +118,11 @@ public class TFTPSim extends TFTPFunctions {
  	        len = sendPacket.getLength();
  	        System.out.println("\nSimulator: sending duplicate packet from client to server.");
  	        if (verboseMode) {
- 	        	 System.out.println("Packet number: " + packetCount);
- 	        	 System.out.println("Packet type: " + packetType);
- 	        	 System.out.println("To host: " + sendPacket.getAddress());
- 	        	 System.out.println("Destination host port: " + sendPacket.getPort());
- 	        	 System.out.println("Containing: ");
-	        	 for (j=0;j<len;j++) {
-	        		 System.out.println("byte " + j + " " + data[j]);
-	        	 }
+	        	 verboseMode(sendPacket.getAddress(), sendPacket.getPort(), len, data);
  	        }
  	
  	        // Send the duplicate datagram packet to the server via the send/receive socket.
- 	        try {
- 	            sendReceiveSocket.send(sendPacket);
- 	        } catch (IOException e) {
- 	            e.printStackTrace();
- 	            System.exit(1);
- 	        }
+ 	        sendPacketFromSocket(sendReceiveSocket, sendPacket);
          }
          
          if (mode == Mode.LOSS && packetCount == packetNumber && receivedType == packetType) {
@@ -171,15 +147,9 @@ public class TFTPSim extends TFTPFunctions {
              clientPort = receivePacket.getPort();
              if (verboseMode) {
             	 System.out.println("Simulator: Packet received:");
-            	 System.out.println("From host: " + receivePacket.getAddress());
-            	 System.out.println("Host port: " + clientPort);
-            	 System.out.println("Length: " + len);
-            	 System.out.println("Containing: " );
-            	 // print the bytes
-            	 for (j=0;j<len;j++) {
-            		 System.out.println("byte " + j + " " + data[j]);
-            	 }
-             }
+            	 verboseMode(receivePacket.getAddress(), clientPort, len, data);
+             }	        	 
+
              
              clientAdress = receivePacket.getAddress();
              // Form a String from the byte array, and print the string.
@@ -218,24 +188,12 @@ public class TFTPSim extends TFTPFunctions {
          len = sendPacket.getLength();
          if (verboseMode) {
         	 System.out.println("\nSimulator: sending packet.");
-        	 System.out.println("To host: " + sendPacket.getAddress());
-        	 System.out.println("Destination host port: " + sendPacket.getPort());
-        	 System.out.println("Length: " + len);
-        	 System.out.println("Containing: ");
-        	 for (j=0;j<len;j++) {
-        		 System.out.println("byte " + j + " " + data[j]);
-        	 }
-         } /*else {
-             System.out.println("Simulator: sending packet.");
-         }*/
+        	 verboseMode(sendPacket.getAddress(), sendPacket.getPort(), len, data);
+         }
          
          // Send the datagram packet to the server via the send/receive socket.
-         try {
-            sendReceiveSocket.send(sendPacket);
-         } catch (IOException e) {
-            e.printStackTrace();
-            System.exit(1);
-         }
+	     sendPacketFromSocket(sendReceiveSocket, sendPacket);
+
          
          if (data[1]==3) { //checking if last data packet
         	 if (len < 516) {
@@ -266,13 +224,7 @@ public class TFTPSim extends TFTPFunctions {
          if (verboseMode) {
         	 // Process the received datagram.
         	 System.out.println("Simulator: Packet received:");
-        	 System.out.println("From host: " + receivePacket.getAddress());
-        	 System.out.println("Host port: " + receivePacket.getPort());
-        	 System.out.println("Length: " + len);
-        	 System.out.println("Containing: ");
-        	 for (j=0;j<len;j++) {
-        		 System.out.println("byte " + j + " " + data[j]);
-        	 }
+        	 verboseMode(receivePacket.getAddress(), receivePacket.getPort(), len, data);
          }
          //Save the type of the received packet
          if (data[1]==1) receivedType = Type.RRQ;
@@ -300,17 +252,12 @@ public class TFTPSim extends TFTPFunctions {
   	        if (verboseMode) {
   	        	 System.out.println("Packet number: " + packetCount);
   	        	 System.out.println("Packet type: " + receivedType);
-  	        	 System.out.println("To host: " + sendPacket.getAddress());
-  	        	 System.out.println("Destination host port: " + sendPacket.getPort());
+  	        	 verboseMode(sendPacket.getAddress(), sendPacket.getPort(), len, data);
   	        }
   	
   	        // Send the duplicate datagram packet to the server via the send/receive socket.
-  	        try {
-  	            sendReceiveSocket.send(sendPacket);
-  	        } catch (IOException e) {
-  	            e.printStackTrace();
-  	            System.exit(1);
-  	        }
+ 	        sendPacketFromSocket(sendReceiveSocket, sendPacket);
+
   	     }
          
          //Lose the packet if selected
@@ -336,13 +283,7 @@ public class TFTPSim extends TFTPFunctions {
              if (verboseMode) {
             	 // Process the received datagram.
             	 System.out.println("Simulator: Packet received:");
-            	 System.out.println("From host: " + receivePacket.getAddress());
-            	 System.out.println("Host port: " + receivePacket.getPort());
-            	 System.out.println("Length: " + len);
-            	 System.out.println("Containing: ");
-            	 for (j=0;j<len;j++) {
-            		 System.out.println("byte " + j + " " + data[j]);
-            	 }
+            	 verboseMode(receivePacket.getAddress(), receivePacket.getPort(), len, data);
              }
              
              //Save the type of the received packet
@@ -372,22 +313,12 @@ public class TFTPSim extends TFTPFunctions {
          
          len = sendPacket.getLength();
          if (verboseMode) {
-        	 System.out.println( "Simulator: Sending packet:");
-        	 System.out.println("To host: " + sendPacket.getAddress());
-        	 System.out.println("Destination host port: " + sendPacket.getPort());
-        	 System.out.println("Length: " + len);
-        	 System.out.println("Containing: ");
-        	 for (j=0;j<len;j++) {
-        		 System.out.println("byte " + j + " " + data[j]);
-        	 }        	 
+        	 System.out.println( "Simulator: Sending packet:");  
+        	 verboseMode(sendPacket.getAddress(), sendPacket.getPort(), len, data);
          }
 
-         try {
-            sendSocket.send(sendPacket);
-         } catch (IOException e) {
-            e.printStackTrace();
-            System.exit(1);
-         }
+	     sendPacketFromSocket(sendSocket, sendPacket);
+
 
          if (data[1]==3) { //checking if last data packet
         	 if (len < 516) {
@@ -576,7 +507,6 @@ public class TFTPSim extends TFTPFunctions {
 					System.out.println("Simulator: Packet received:");
 					verboseMode(receivePacket.getAddress(), receivePacket.getPort(), len, data);
 				}
-
 				socket.close();
 			} catch (IOException e) {
 				e.printStackTrace();
