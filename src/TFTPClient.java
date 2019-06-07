@@ -1,3 +1,4 @@
+
 // TFTPClient.java
 // This class is the client side for a very simple assignment based on TFTP on
 // UDP/IP. The client uses one port and sends a read or write request and gets 
@@ -7,22 +8,29 @@ import java.io.*;
 import java.net.*;
 import java.util.*;
 
-public class TFTPClient {
+public class TFTPClient extends TFTPFunctions {
 
 	private DatagramPacket sendPacket, receivePacket;
 	private DatagramSocket sendReceiveSocket;
 	private int connectionPort;
 	private static boolean verboseMode = false; // false for quiet and true for verbose
-	private static String ipAddress = "192.168.1.32";
-	private static String clientDirectory = "M:\\SYSC3303_Project";
-	private static boolean finishedRequest = false;
-	private static boolean changeMode = true;
+	static String ipAddress = "192.168.0.21";
+	private static String clientDirectory = "C:\\Users\\Sherry Wang\\Documents\\GitHub\\SYSC3303_Project\\src";
+	static boolean finishedRequest = false;
+	static boolean changeMode = true;
 	private boolean running = true;
-	private static final int TIMEOUT = 3000; //Delay for timeout when waiting to receive file 
+	private static final int TIMEOUT = 3000; // Delay for timeout when waiting to receive file
 	private ArrayList<Integer> processedACKBlocks = new ArrayList<>();
-	public static enum Mode { NORMAL, TEST };
+
+	public static enum Mode {
+		NORMAL, TEST
+	};
+
 	private static Mode run = Mode.NORMAL;
-	public static enum RequestType {READ, WRITE};
+
+	public static enum RequestType {
+		READ, WRITE
+	};
 
 	private static RequestType request;
 
@@ -32,7 +40,7 @@ public class TFTPClient {
 			// port on the local host machine. This socket will be used to
 			// send and receive UDP Datagram packets.
 			sendReceiveSocket = new DatagramSocket();
-			//Set socket timeout to allow for retransmission
+			// Set socket timeout to allow for retransmission
 			sendReceiveSocket.setSoTimeout(TIMEOUT);
 		} catch (SocketException se) { // Can't create the socket.
 			se.printStackTrace();
@@ -68,7 +76,7 @@ public class TFTPClient {
 				while (!(input.equals("1") || input.equals("2") || input.equals("3"))) {
 					System.out.println("\nEnter '1' for read or '2' write request or '3' to quit: ");
 					input = sc.nextLine();
-	
+
 					if (input.equals("1")) {
 						readWrite = (byte) 1;
 						request = RequestType.READ;
@@ -80,7 +88,7 @@ public class TFTPClient {
 					else
 						System.out.print(input + " is not 1 or 2 or .\n");
 				}
-				changeMode=false;
+				changeMode = false;
 			}
 
 			if (!running)
@@ -101,8 +109,6 @@ public class TFTPClient {
 			String mode; // filename and mode as Strings
 			int j, len, sendPort;
 
-			// that test vs. normal will be entered by the user.
-
 			if (run == Mode.NORMAL)
 				sendPort = 69;
 			else
@@ -119,10 +125,6 @@ public class TFTPClient {
 
 			// and copy into the msg
 			System.arraycopy(fn, 0, msg, 2, fn.length);
-			// format is: source array, source index, dest array,
-			// dest index, # array elements to copy
-			// i.e. copy fn from 0 to fn.length to msg, starting at
-			// index 2
 
 			// now add a 0 byte
 			msg[fn.length + 2] = 0;
@@ -140,13 +142,6 @@ public class TFTPClient {
 			// end with another 0 byte
 			msg[len - 1] = 0;
 
-			// Construct a datagram packet that is to be sent to a specified port
-			// on a specified host.
-			// The arguments are:
-			// msg - the message contained in the packet (the byte array)
-			// the length we care about - k+1
-			// InetAddress.getLocalHost() - the Internet address of the
-			// destination host.
 			// In this example, we want the destination to be the same as
 			// the source (i.e., we want to run the client and server on the
 			// same computer). InetAddress.getLocalHost() returns the Internet
@@ -163,57 +158,67 @@ public class TFTPClient {
 			if (verboseMode) {
 				System.out.println("Client: sending packet.");
 				verboseMode(sendPacket.getAddress(), sendPacket.getPort(), len, msg);
-			} 
+			}
 
 			// Form a String from the byte array, and print the string.
 			String sending = new String(msg, 0, len);
 			System.out.println(sending);
 
-			//Append the directory to the beginning of the file
+			// Append the directory to the beginning of the file
 			fileName = clientDirectory + "//" + fileName;
-			
+
 			// Send the datagram packet to the server via the send/receive socket.
-			received = false;//reset flag for receiving packet
-			while(!received){//set to true when client receives response to read/write request
+			received = false;// reset flag for receiving packet
+			while (!received) {// set to true when client receives response to read/write request
 				try {
 					sendReceiveSocket.send(sendPacket);
 				} catch (IOException e) {
 					e.printStackTrace();
 					System.exit(1);
 				}
-	
+
 				System.out.println("Client: Packet sent.");
-	
+
 				// Construct a DatagramPacket for receiving packets up
 				// to 100 bytes long (the length of the byte array).
-	
+
 				data = new byte[100];
 				receivePacket = new DatagramPacket(data, data.length);
-				
-				if (request != RequestType.READ) {
+
+				if (request == RequestType.READ) {
+					boolean testMode = false;
+					if (run == Mode.TEST) testMode = true;
+					receiveFiles(fileName, sendPort, "Client", sendReceiveSocket, testMode, true, verboseMode, connectionPort);
+
+					if (finishedRequest) {
+						break;
+					}
+				} else {
 					System.out.println("Client: Waiting for packet.");
 					try {
 						// Block until a datagram is received via sendReceiveSocket.
 						sendReceiveSocket.receive(receivePacket);
-					} catch(InterruptedIOException ie) {
+					} catch (InterruptedIOException ie) {
 						System.out.println("Client Timed out. Resending packet.");
 						continue;
-					}catch (IOException e) {
+					} catch (IOException e) {
 						e.printStackTrace();
 						System.exit(1);
 					}
 					connectionPort = receivePacket.getPort();
 					received = true;
-					
+
 					// Process the received datagram.
-					if (run != Mode.TEST) sendPort = receivePacket.getPort();
+					if (run != Mode.TEST)
+						sendPort = receivePacket.getPort();
+
 					len = receivePacket.getLength();
-					
+
 					if (verboseMode) {
 						System.out.println("Client: Packet received:");
-						verboseMode(receivePacket.getAddress(), receivePacket.getPort(), len, data);						
+						verboseMode(receivePacket.getAddress(), receivePacket.getPort(), len, data);
 					}
-	
+
 					boolean ackVerified = false;
 					byte[] readAck = new byte[] { 0, 3, 0, 1 };
 					byte[] writeAck = new byte[] { 0, 4, 0, 0 };
@@ -222,286 +227,263 @@ public class TFTPClient {
 					} else {
 						ackVerified = Arrays.equals(writeAck, data);
 					}
-	
-					//if (!ackVerified) // re-send request
-					//if (request == RequestType.WRITE) {
-						processedACKBlocks.add(data[2]*10+data[3]);	// Add this point it should be ACK 0.
-						transferFiles(fileName, sendPort);
-					//}
-				} else {
-					receiveFiles(fileName);
-					if(finishedRequest) {
-						break;
-					}
+
+					processedACKBlocks.add(data[2] * 10 + data[3]); // Add this point it should be ACK 0.
+					//transferFiles(fileName, sendPort);
+					transferFiles(sendReceiveSocket, receivePacket, "Client", fileName, sendPort, processedACKBlocks, verboseMode);
 				}
-				System.out.println();
+				// System.out.println();
 			}
 		}
 		System.out.println("Client is off");
 		// We're finished, so close the socket.
 		sendReceiveSocket.close();
 	}
-	
-	public void sendPacket() {
-		
-	}
+
+
 
 	/**
 	 * Receives for read request
+	 * 
 	 * @param fileName
 	 */
-	public void receiveFiles(String fileName) {
-		ArrayList<Integer> processedBlocks = new ArrayList<>();
-		
-		//used to differentiate between read request response and regular file transfer
-		boolean requestResponse = true;
-		int sendPort = -1; 
-		if (run == Mode.TEST) sendPort = 23;
-		try {
-			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(fileName));
-
-			while (true) {
-				byte[] data = new byte[516];
-				receivePacket = new DatagramPacket(data, data.length);
-				int len = receivePacket.getLength();
-
-				System.out.println("Client: Waiting for data packet.");
-				if(requestResponse) {
-					try {
-						// Block until a datagram is received via sendReceiveSocket.
-						sendReceiveSocket.receive(receivePacket);
-						if (run != Mode.TEST) sendPort = receivePacket.getPort();
-						requestResponse = false;
-						connectionPort = receivePacket.getPort();
-					}catch(InterruptedIOException io) {
-						System.out.println("Client timed out. resending request.");
-						break;
-					}catch (IOException e) {
-						e.printStackTrace();
-						System.exit(1);
-					}
-				} else {
-					try {
-						// Block until a datagram is received via sendReceiveSocket.
-						sendReceiveSocket.setSoTimeout(300000);
-						sendReceiveSocket.receive(receivePacket);
-						sendReceiveSocket.setSoTimeout(TIMEOUT);
-					}catch(InterruptedIOException io) {
-						System.out.println("Client has exceeded idle time. Cancelling transfer.");
-						finishedRequest = true;
-						changeMode = true;
-						break;
-					}catch (IOException e) {
-						e.printStackTrace();
-						System.exit(1);
-					}
-				}
-				
-				//Check if packet came from correct source. Send back ERROR packet code 5 if not.
-				if(connectionPort != receivePacket.getPort()) {
-					System.out.println("Received Packet from unknown source. Responding with ERROR and continuing.");
-					byte[] err = new byte[] {0,5,0,5};
-					sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), receivePacket.getPort());
-					try{
-						sendReceiveSocket.send(sendPacket);
-					}catch(IOException e) {
-						e.printStackTrace();
-						System.exit(1);
-					}
-					continue;
-				}
-					
-				// Process the received datagram.
-				len = receivePacket.getLength();
-				data = receivePacket.getData();
-
-				//Check if ERROR packet was received
-				if(data[1] == 5) {
-					if(data[3] == 5) {
-						System.out.println("ERROR code 5: ACK Packet sent to wrong port. Waiting for proper DATA.");
-						continue;
-					}
-				}  
-				
-				System.out.println("Client: Data Packet received.");
-
-				// Check if it's a duplicate packet. If it is, we still want to send an ACK but not rewrite to the file.
-				if (!processedBlocks.contains(data[2]*10+data[3])) {
-					// This block number has not been processed. Write it to the file.
-					try {
-						out.write(data, 4, len - 4);
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					processedBlocks.add(data[2]*10+data[3]);
-				} else {					
-					if (verboseMode) {		
-						System.out.println("Client: Duplicate data packet received. Ignoring it by not writing it again.");	
-						// TODO We should send an Nth ACK for the Nth duplicate data packet that was received.
-					}		
-				}		
-
-				if (verboseMode) {
-					verboseMode(receivePacket.getAddress(), receivePacket.getPort(), len, data);
-				}
-
-				byte[] ack = new byte[] { 0, 4, data[2], data[3]};
-
-				sendPacket = new DatagramPacket(ack, ack.length, InetAddress.getByName(ipAddress), sendPort);
-
-				try {
-					sendReceiveSocket.send(sendPacket);
-				} catch (IOException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
-
-				if (verboseMode) {
-					System.out.println("Client: Sending ACK packet:");
-					verboseMode(receivePacket.getAddress(), receivePacket.getPort(), sendPacket.getLength(), ack);
-				}
-				
-				if (len < 516) {
-					System.out.println("Received all data packets");
-					finishedRequest = true;
-					changeMode = true;
-					try {
-						out.close();
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-					break;
-				}
-			}
-		} catch (IOException e2) {
-			// TODO Auto-generated catch block
-			e2.printStackTrace();
-		}
-	}
-	
-	public void verboseMode(InetAddress inetAddress, int port, int length, byte[] data) {
-		System.out.println("Host: " + inetAddress);
-		System.out.println("Destination host port: " + port);
-		System.out.println("Length: " + length);
-		System.out.println("Containing: ");
-		for (int j = 0; j < length; j++) {
-			System.out.println("byte " + j + " " + data[j]);
-		}
-	}
+//	public void receiveFiles(String fileName) {
+//		ArrayList<Integer> processedBlocks = new ArrayList<>();
+//
+//		// used to differentiate between read request response and regular file transfer
+//		boolean requestResponse = true;
+//		int sendPort = -1;
+//		if (run == Mode.TEST)
+//			sendPort = 23;
+//		try {
+//			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(fileName));
+//
+//			while (true) {
+//				byte[] data = new byte[516];
+//				receivePacket = new DatagramPacket(data, data.length);
+//				int len = receivePacket.getLength();
+//
+//				System.out.println("Client: Waiting for data packet.");
+//				if (requestResponse) {
+//					try {
+//						// Block until a datagram is received via sendReceiveSocket.
+//						sendReceiveSocket.receive(receivePacket);
+//						if (run != Mode.TEST)
+//							sendPort = receivePacket.getPort();
+//						requestResponse = false;
+//						connectionPort = receivePacket.getPort();
+//					} catch (InterruptedIOException io) {
+//						System.out.println("Client timed out. resending request.");
+//						break;
+//					} catch (IOException e) {
+//						e.printStackTrace();
+//						System.exit(1);
+//					}
+//				} else {
+//					try {
+//						// Block until a datagram is received via sendReceiveSocket.
+//						sendReceiveSocket.setSoTimeout(300000);
+//						sendReceiveSocket.receive(receivePacket);
+//						sendReceiveSocket.setSoTimeout(TIMEOUT);
+//					} catch (InterruptedIOException io) {
+//						System.out.println("Client has exceeded idle time. Cancelling transfer.");
+//						finishedRequest = true;
+//						changeMode = true;
+//						break;
+//					} catch (IOException e) {
+//						e.printStackTrace();
+//						System.exit(1);
+//					}
+//				}
+//
+//				// Check if packet came from correct source. Send back ERROR packet code 5 if
+//				// not.
+//				if (connectionPort != receivePacket.getPort()) {
+//					System.out.println("Received Packet from unknown source. Responding with ERROR and continuing.");
+//					byte[] err = new byte[] { 0, 5, 0, 5 };
+//					sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(),
+//							receivePacket.getPort());
+//					try {
+//						sendReceiveSocket.send(sendPacket);
+//					} catch (IOException e) {
+//						e.printStackTrace();
+//						System.exit(1);
+//					}
+//					continue;
+//				}
+//
+//				// Process the received datagram.
+//				len = receivePacket.getLength();
+//				data = receivePacket.getData();
+//
+//				// Check if ERROR packet was received
+//				if (data[1] == 5) {
+//					if (data[3] == 5) {
+//						System.out.println("ERROR code 5: ACK Packet sent to wrong port. Waiting for proper DATA.");
+//						continue;
+//					}
+//				}
+//
+//				System.out.println("Client: Data Packet received.");
+//
+//				// Check if it's a duplicate packet. If it is, we still want to send an ACK but
+//				// not rewrite to the file.
+//				if (!processedBlocks.contains(data[2] * 10 + data[3])) {
+//					// This block number has not been processed. Write it to the file.
+//					try {
+//						out.write(data, 4, len - 4);
+//					} catch (IOException e) {
+//						// TODO Auto-generated catch block
+//						e.printStackTrace();
+//					}
+//					processedBlocks.add(data[2] * 10 + data[3]);
+//				} else {
+//					if (verboseMode) {
+//						System.out.println(
+//								"Client: Duplicate data packet received. Ignoring it by not writing it again.");
+//						// TODO We should send an Nth ACK for the Nth duplicate data packet that was
+//						// received.
+//					}
+//				}
+//
+//				if (verboseMode) {
+//					verboseMode(receivePacket.getAddress(), receivePacket.getPort(), len, data);
+//				}
+//
+//				byte[] ack = new byte[] { 0, 4, data[2], data[3] };
+//
+//				sendPacket = new DatagramPacket(ack, ack.length, InetAddress.getByName(ipAddress), sendPort);
+//
+//				try {
+//					sendReceiveSocket.send(sendPacket);
+//				} catch (IOException e) {
+//					e.printStackTrace();
+//					System.exit(1);
+//				}
+//
+//				if (verboseMode) {
+//					System.out.println("Client: Sending ACK packet:");
+//					verboseMode(receivePacket.getAddress(), receivePacket.getPort(), sendPacket.getLength(), ack);
+//				}
+//
+//				if (len < 516) {
+//					System.out.println("Received all data packets");
+//					finishedRequest = true;
+//					changeMode = true;
+//					try {
+//						out.close();
+//					} catch (IOException e) {
+//						// TODO Auto-generated catch block
+//						e.printStackTrace();
+//					}
+//					break;
+//				}
+//			}
+//		} catch (IOException e2) {
+//			// TODO Auto-generated catch block
+//			e2.printStackTrace();
+//		}
+//	}
 
 	/**
 	 * 
 	 * @param filename
 	 * @param sendPort
 	 */
-	public void transferFiles(String filename, int sendPort) {
-		int blockNum = 1; // Data blocks start at one.
-		byte[] data = new byte[100];
-		receivePacket = new DatagramPacket(data, data.length);
-
-		ArrayList<byte[]> msgBuffer = readFileIntoBlocks(filename);
-		
-		for (int i = 0; i < msgBuffer.size(); i++) {
-			byte[] msg = msgBuffer.get(i);
-			msg[0] = 0;
-			msg[1] = 3;
-			msg[2] = blockNumBytes(blockNum)[0];
-			msg[3] = blockNumBytes(blockNum)[1];
-
-			try {
-				sendPacket = new DatagramPacket(msg, msg.length, InetAddress.getByName(ipAddress), sendPort);
-			} catch (UnknownHostException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-			}
-
-			try {
-				sendReceiveSocket.send(sendPacket);
-			} catch (IOException e) {
-				e.printStackTrace();
-				System.exit(1);
-			}
-
-			System.out.println("Client: Data Packet sent.");
-
-			try {
-				// Block until a datagram is received via sendReceiveSocket.
-				sendReceiveSocket.receive(receivePacket);
-			} catch(InterruptedIOException ie) {
-				System.out.println("Client Timed out. Resending packet.");
-				i--;
-				continue;
-			} catch (IOException e) {
-				e.printStackTrace();
-				System.exit(1);
-			}
-			// Check if the received packet is a duplicate ACK. If it is, then we should not be re-sending the Nth data packet for the ACK. Sorcerer's Apprentice Bug. 	
-			if (!processedACKBlocks.contains(data[2]*10+data[3])) {		
-				processedACKBlocks.add(data[2]*10+data[3]);		
-			}  else {		
-				if (verboseMode) {		
-					System.out.println("Client: Duplicate ACK data packet received. Ignoring it by not re-sending data block  number [" + data[2]*10+data[3] + "] and waiting for the next datablock.");		
-				}		
-			}
-			
-			//Check if packet came from correct source. Send back ERROR packet code 5 if not.
-			if(connectionPort != receivePacket.getPort()) {
-				System.out.println("Received Packet from unknown source. Responding with ERROR and continuing.");
-				byte[] err = new byte[] {0,5,0,5};
-				sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), receivePacket.getPort());
-				try{
-					sendReceiveSocket.send(sendPacket);
-				}catch(IOException e) {
-					e.printStackTrace();
-					System.exit(1);
-				}
-				i--;
-				continue;
-			}
-			
-			if(receivePacket.getData()[1] == 5) {
-				if(receivePacket.getData()[3] == 5) {
-					System.out.println("ERROR code 5: DATA Packet sent to wrong port. Resending last DATA packet.");
-					i--;
-					continue;
-				}
-			}
-
-			int len = receivePacket.getLength();
-			if (verboseMode) {
-				System.out.println("Client: Packet received:");
-				System.out.println("Block number: " + receivePacket.getData()[2] + receivePacket.getData()[3]);
-				verboseMode(receivePacket.getAddress(), receivePacket.getPort(), len, data);
-			}
-			blockNum++;
-
-			if (sendPacket.getLength() < 516) {
-				System.out.println("Client: Last packet sent.");
-				finishedRequest = true;
-				changeMode = true;
-			}
-
-		}
-	}
-
-	/**
-	 * Converts the blocknumber as an int into a 2 byte array
-	 * @param blockNum
-	 * @return
-	 */
-	private byte[] blockNumBytes(int blockNum) {
-		byte[] blockNumArray = new byte[2];
-
-		// create the corresponding block number in 2 bytes
-		byte block1 = (byte) (blockNum / 10);
-		byte block2 = (byte) (blockNum % 10);
-		blockNumArray[0] = block1;
-		blockNumArray[1] = block2;
-		return blockNumArray;
-
-	}
+//	public void transferFiles(String filename, int sendPort) {
+//		int blockNum = 1; // Data blocks start at one.
+//		byte[] data = new byte[100];
+//		receivePacket = new DatagramPacket(data, data.length);
+//
+//		ArrayList<byte[]> msgBuffer = readFileIntoBlocks(filename);
+//
+//		for (int i = 0; i < msgBuffer.size(); i++) {
+//			byte[] msg = msgBuffer.get(i);
+//			byte[] blockNumsInBytes = blockNumBytes(blockNum);
+//			msg[0] = 0;
+//			msg[1] = 3;
+//			msg[2] = blockNumsInBytes[0];
+//			msg[3] = blockNumsInBytes[1];
+//
+//			try {
+//				sendPacket = new DatagramPacket(msg, msg.length, InetAddress.getByName(ipAddress), sendPort);
+//			} catch (UnknownHostException e1) {
+//				// TODO Auto-generated catch block
+//				e1.printStackTrace();
+//			}
+//
+//			try {
+//				sendReceiveSocket.send(sendPacket);
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//				System.exit(1);
+//			}
+//
+//			System.out.println("Client: Data Packet sent.");
+//
+//			try {
+//				// Block until a datagram is received via sendReceiveSocket.
+//				sendReceiveSocket.receive(receivePacket);
+//			} catch (InterruptedIOException ie) {
+//				System.out.println("Client Timed out. Resending packet.");
+//				i--;
+//				continue;
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//				System.exit(1);
+//			}
+//			// Check if the received packet is a duplicate ACK. If it is, then we should not
+//			// be re-sending the Nth data packet for the ACK. Sorcerer's Apprentice Bug.
+//			if (!processedACKBlocks.contains(data[2] * 10 + data[3])) {
+//				processedACKBlocks.add(data[2] * 10 + data[3]);
+//			} else {
+//				if (verboseMode) {
+//					System.out.println(
+//							"Client: Duplicate ACK data packet received. Ignoring it by not re-sending data block  number ["
+//									+ data[2] * 10 + data[3] + "] and waiting for the next datablock.");
+//				}
+//			}
+//
+//			// Check if packet came from correct source. Send back ERROR packet code 5 if
+//			// not.
+//			if (connectionPort != receivePacket.getPort()) {
+//				System.out.println("Received Packet from unknown source. Responding with ERROR CODE 5 and continuing.");
+//				byte[] err = new byte[] { 0, 5, 0, 5 };
+//				sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), receivePacket.getPort());
+//				try {
+//					sendReceiveSocket.send(sendPacket);
+//				} catch (IOException e) {
+//					e.printStackTrace();
+//					System.exit(1);
+//				}
+//				i--;
+//				continue;
+//			}
+//
+//			if (receivePacket.getData()[1] == 5) {
+//				if (receivePacket.getData()[3] == 5) {
+//					System.out.println("ERROR code 5: DATA Packet sent to wrong port. Resending last DATA packet.");
+//					i--;
+//					continue;
+//				}
+//			}
+//
+//			int len = receivePacket.getLength();
+//			if (verboseMode) {
+//				System.out.println("Client: Packet received:");
+//				System.out.println("Block number: " + receivePacket.getData()[2] + receivePacket.getData()[3]);
+//				verboseMode(receivePacket.getAddress(), receivePacket.getPort(), len, data);
+//			}
+//			blockNum++;
+//
+//			if (sendPacket.getLength() < 516) {
+//				System.out.println("Client: Last packet sent.");
+//				finishedRequest = true;
+//				changeMode = true;
+//			}
+//
+//		}
+//	}
 
 	/**
 	 * "Menu" for configuring the settings of client application
@@ -578,7 +560,7 @@ public class TFTPClient {
 			}
 		}
 
-		System.out.println("\n------------------------------------------------------\nConfigerations are now set up.");
+		System.out.println("\n------------------------------------------------------\nConfigurations are now set up.");
 		System.out.println("------------------------------------------------------");
 	}
 
@@ -587,25 +569,5 @@ public class TFTPClient {
 		System.out.println("Welcome to the TFTP client application");
 		configClient();
 		c.sendAndReceive();
-	}
-	
-	private ArrayList<byte[]> readFileIntoBlocks(String fileName) {
-		ArrayList<byte[]> msgList = new ArrayList<>();
-		byte[] dataBuffer = new byte[512];
-		BufferedInputStream bis;
-		int bytesRead;
-		try {
-			bis = new BufferedInputStream(new FileInputStream(fileName));	
-			while ((bytesRead = bis.read(dataBuffer, 0, 512)) != -1) {
-				byte[] msg = new byte[bytesRead + 4];	
-				System.arraycopy(dataBuffer, 0, msg, 4, bytesRead);
-				msgList.add(msg);
-			}
-			bis.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		
-		return msgList;
 	}
 }
