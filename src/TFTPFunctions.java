@@ -68,6 +68,16 @@ public class TFTPFunctions {
 		}
 	}
 	
+	void receivePacketFromSocket(DatagramSocket socket, DatagramPacket packet) {
+		  try {
+	            // Block until a datagram is received via sendReceiveSocket.
+	            socket.receive(packet);
+	         } catch(IOException e) {
+	            e.printStackTrace();
+	            System.exit(1);
+	         }
+	}
+	
 	// client: sendport = -1 or 23 if test mode
 	void receiveFiles(String fileName, int sendPort, String host, DatagramSocket socket, boolean testMode, boolean requestResponse, boolean verboseMode, int connectionPort) {
 		ArrayList<Integer> processedBlocks = new ArrayList<>();

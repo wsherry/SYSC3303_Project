@@ -68,13 +68,8 @@ public class TFTPSim extends TFTPFunctions {
          receivePacket = new DatagramPacket(data, data.length);
 
          System.out.println("Simulator: Waiting for packet.");
-         // Block until a datagram packet is received from receiveSocket.
-         try {
-            receiveSocket.receive(receivePacket);
-         } catch (IOException e) {
-            e.printStackTrace();
-            System.exit(1);
-         }
+         receivePacketFromSocket(receiveSocket, receivePacket);
+
 
          // Process the received datagram.
          len = receivePacket.getLength();
@@ -132,13 +127,8 @@ public class TFTPSim extends TFTPFunctions {
     		 data = new byte[516];
              receivePacket = new DatagramPacket(data, data.length);
              System.out.println("Simulator: Waiting for packet.");
-             // Block until a datagram packet is received from receiveSocket.
-             try {
-                receiveSocket.receive(receivePacket);
-             } catch (IOException e) {
-                e.printStackTrace();
-                System.exit(1);
-             }
+             receivePacketFromSocket(receiveSocket, receivePacket);
+
 
              // Process the received datagram.
              len = receivePacket.getLength();
@@ -209,13 +199,7 @@ public class TFTPSim extends TFTPFunctions {
          receivePacket = new DatagramPacket(data, data.length);
 
          System.out.println("Simulator: Waiting for packet.");
-         try {
-            // Block until a datagram is received via sendReceiveSocket.
-            sendReceiveSocket.receive(receivePacket);
-         } catch(IOException e) {
-            e.printStackTrace();
-            System.exit(1);
-         }
+         receivePacketFromSocket(sendReceiveSocket, receivePacket);
 
          serverPort = receivePacket.getPort();
     	 len = receivePacket.getLength();
@@ -268,13 +252,7 @@ public class TFTPSim extends TFTPFunctions {
     		 data = new byte[516];
              receivePacket = new DatagramPacket(data, data.length);
              System.out.println("Simulator: Waiting for packet.");
-             try {
-                // Block until a datagram is received via sendReceiveSocket.
-                sendReceiveSocket.receive(receivePacket);
-             } catch(IOException e) {
-                e.printStackTrace();
-                System.exit(1);
-             }
+             receivePacketFromSocket(sendReceiveSocket, receivePacket);
 
              serverPort = receivePacket.getPort();
         	 len = receivePacket.getLength();
