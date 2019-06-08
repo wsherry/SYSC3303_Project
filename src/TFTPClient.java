@@ -137,16 +137,9 @@ public class TFTPClient extends TFTPFunctions {
 
 			len = fn.length + md.length + 4; // length of the message
 			// length of filename + length of mode + opcode (2) + two 0s (2)
-			// second 0 to be added next:
-
 			// end with another 0 byte
 			msg[len - 1] = 0;
 
-			// In this example, we want the destination to be the same as
-			// the source (i.e., we want to run the client and server on the
-			// same computer). InetAddress.getLocalHost() returns the Internet
-			// address of the local host.
-			// 69 - the destination port number on the destination host.
 			try {
 				sendPacket = new DatagramPacket(msg, len, InetAddress.getByName(ipAddress), sendPort);
 			} catch (UnknownHostException e) {
@@ -159,7 +152,7 @@ public class TFTPClient extends TFTPFunctions {
 				System.out.println("Client: sending packet.");
 				verboseMode(sendPacket.getAddress(), sendPacket.getPort(), len, msg);
 			}
-			
+
 			// Form a String from the byte array, and print the string.
 			String sending = new String(msg, 0, len);
 			System.out.println(sending);
@@ -176,16 +169,15 @@ public class TFTPClient extends TFTPFunctions {
 
 				// Construct a DatagramPacket for receiving packets up
 				// to 100 bytes long (the length of the byte array).
-
 				data = new byte[100];
 				receivePacket = new DatagramPacket(data, data.length);
 
 				if (request == RequestType.READ) {
 					boolean testMode = false;
-					if (run == Mode.TEST) testMode = true;
-					System.out.println(sendPort);
-					System.out.println("&&&&&&&&&&&&&&&&&&&&&&");
-					receiveFiles(fileName, sendPort, "Client", sendReceiveSocket, testMode, true, verboseMode, connectionPort);
+					if (run == Mode.TEST)
+						testMode = true;
+					receiveFiles(fileName, sendPort, "Client", sendReceiveSocket, testMode, true, verboseMode,
+							connectionPort);
 					if (finishedRequest) {
 						break;
 					}
@@ -225,11 +217,9 @@ public class TFTPClient extends TFTPFunctions {
 					}
 
 					processedACKBlocks.add(data[2] * 10 + data[3]); // Add this point it should be ACK 0.
-					//transferFiles(fileName, sendPort);
-					System.out.println("###############" + receivePacket.getAddress());
-					transferFiles(sendReceiveSocket, receivePacket, "Client", fileName, sendPort, processedACKBlocks, verboseMode);
+					transferFiles(sendReceiveSocket, receivePacket, "Client", fileName, sendPort, processedACKBlocks,
+							verboseMode);
 				}
-				// System.out.println();
 			}
 		}
 		System.out.println("Client is off");

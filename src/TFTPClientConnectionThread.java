@@ -39,7 +39,7 @@ public class TFTPClientConnectionThread extends TFTPFunctions implements Runnabl
 		this.verboseMode = verboseMode;
 		this.serverDirectory = serverDirectory;
 	}
-	
+
 	/**
 	 * Closes the receive socket
 	 */
@@ -124,7 +124,6 @@ public class TFTPClientConnectionThread extends TFTPFunctions implements Runnabl
 				checkRequestForError(len, data);
 
 				if (request == Request.ERROR) { // it was invalid, close socket on port 69 (so things work next time)
-												// and quit
 					receiveSocket.close();
 					try {
 						throw new Exception("Not yet implemented");
@@ -168,9 +167,8 @@ public class TFTPClientConnectionThread extends TFTPFunctions implements Runnabl
 		public void run() {
 			// Create a response.
 			if (request == Request.READ) {
-				//transferFiles(serverDirectory + "\\" + fileName, receivePacket.getPort(), receivePacket);
-				transferFiles(sendReceiveSocket, receivePacket,"Server", serverDirectory + "\\" + fileName, receivePacket.getPort(), processedACKBlocks, verboseMode);
-
+				transferFiles(sendReceiveSocket, receivePacket, "Server", serverDirectory + "\\" + fileName,
+						receivePacket.getPort(), processedACKBlocks, verboseMode);
 			} else if (request == Request.WRITE) {
 				byte[] response = writeResp;
 				send(response);
@@ -189,14 +187,14 @@ public class TFTPClientConnectionThread extends TFTPFunctions implements Runnabl
 			}
 
 			sendPacketFromSocket(sendReceiveSocket, sendPacket);
-			System.out.println("TFTPClientConnectionThread: packet sent using port " + sendReceiveSocket.getLocalPort());
-
-			//receiveFiles(fileName, sendReceiveSocket.getLocalPort());
-			receiveFiles(serverDirectory + "\\" + fileName, sendReceiveSocket.getLocalPort(), "Server", sendReceiveSocket, true, false, verboseMode, connectionPort);
+			System.out
+					.println("TFTPClientConnectionThread: packet sent using port " + sendReceiveSocket.getLocalPort());
+			receiveFiles(serverDirectory + "\\" + fileName, sendReceiveSocket.getLocalPort(), "Server",
+					sendReceiveSocket, true, false, verboseMode, connectionPort);
 			// We're finished with this socket, so close it.
 			sendReceiveSocket.close();
 		}
 
 	}
-	
+
 }
