@@ -12,7 +12,7 @@ public class TFTPClient extends TFTPFunctions {
 
 	private DatagramPacket sendPacket, receivePacket;
 	private DatagramSocket sendReceiveSocket;
-	private int connectionPort;
+	static int connectionPort;
 	private static boolean verboseMode = false; // false for quiet and true for verbose
 	static String ipAddress = "192.168.0.21";
 	private static String clientDirectory = "C:\\Users\\Sherry Wang\\Documents\\GitHub\\SYSC3303_Project\\src";
@@ -188,8 +188,9 @@ public class TFTPClient extends TFTPFunctions {
 				if (request == RequestType.READ) {
 					boolean testMode = false;
 					if (run == Mode.TEST) testMode = true;
+					System.out.println(sendPort);
+					System.out.println("&&&&&&&&&&&&&&&&&&&&&&");
 					receiveFiles(fileName, sendPort, "Client", sendReceiveSocket, testMode, true, verboseMode, connectionPort);
-
 					if (finishedRequest) {
 						break;
 					}
@@ -230,6 +231,7 @@ public class TFTPClient extends TFTPFunctions {
 
 					processedACKBlocks.add(data[2] * 10 + data[3]); // Add this point it should be ACK 0.
 					//transferFiles(fileName, sendPort);
+					System.out.println("###############" + receivePacket.getAddress());
 					transferFiles(sendReceiveSocket, receivePacket, "Client", fileName, sendPort, processedACKBlocks, verboseMode);
 				}
 				// System.out.println();

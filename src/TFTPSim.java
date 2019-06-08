@@ -123,9 +123,7 @@ public class TFTPSim extends TFTPFunctions {
  	
  	        // Send the duplicate datagram packet to the server via the send/receive socket.
  	        sendPacketFromSocket(sendReceiveSocket, sendPacket);
-         }
-         
-         if (mode == Mode.LOSS && packetCount == packetNumber && receivedType == packetType) {
+         } else if (mode == Mode.LOSS && packetCount == packetNumber && receivedType == packetType) {
         	 System.out.println("------------------------------------------------------\nLosing " + packetType + " packet number " + packetNumber + "...");
     		 System.out.println("------------------------------------------------------");
     		 

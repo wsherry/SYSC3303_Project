@@ -71,12 +71,14 @@ public class TFTPFunctions {
 	// client: sendport = -1 or 23 if test mode
 	void receiveFiles(String fileName, int sendPort, String host, DatagramSocket socket, boolean testMode, boolean requestResponse, boolean verboseMode, int connectionPort) {
 		ArrayList<Integer> processedBlocks = new ArrayList<>();
+		if (testMode) sendPort = 23;
 		try {
+			if (host == "Server") socket.setSoTimeout(TIMEOUT);
 			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(fileName));
 
 			while (true) {
 				byte[] data = new byte[516];
-				DatagramPacket receivePacket = new DatagramPacket(data, data.length);
+				receivePacket = new DatagramPacket(data, data.length);
 				int len = receivePacket.getLength();
 				System.out.println(host +": Waiting for data packet.");
 				if (requestResponse) {
@@ -122,6 +124,9 @@ public class TFTPFunctions {
 				
 				// Check if packet came from correct source. Send back ERROR packet code 5 if
 				// not.
+				System.out.println(connectionPort);
+				System.out.println(receivePacket.getPort());
+				System.out.println("&&&&&&&&&&&&&&&&&&&&&&");
 				if (connectionPort != receivePacket.getPort()) {
 					System.out.println("Received Packet from unknown source. Responding with ERROR CODE 5 and continuing.");
 					byte[] err = new byte[] { 0, 5, 0, 5 };
@@ -174,7 +179,14 @@ public class TFTPFunctions {
 				byte[] ack = new byte[] { 0, 4, data[2], data[3] };
 
 				//sendPacket = new DatagramPacket(ack, ack.length, InetAddress.getByName(ipAddress), sendPort);
-				sendPacket = new DatagramPacket(ack, ack.length, receivePacket.getAddress(), receivePacket.getPort());
+				System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!");
+				System.out.println(receivePacket.getPort());
+				System.out.println(sendPort);
+				if (host == "Client") {
+					sendPacket = new DatagramPacket(ack, ack.length, receivePacket.getAddress(), sendPort);
+				} else {
+					sendPacket = new DatagramPacket(ack, ack.length, receivePacket.getAddress(), receivePacket.getPort());
+				}
 				sendPacketFromSocket(socket, sendPacket);
 
 				if (verboseMode) {
@@ -229,6 +241,8 @@ public class TFTPFunctions {
 					e1.printStackTrace();
 				}
 			}
+			System.out.println("!!!!!!!!!!!!!!");
+			System.out.println(sendPort1);
 
 			for (int i = 0; i < msgBuffer.size(); i++) {
 				byte[] msg = msgBuffer.get(i);
@@ -245,7 +259,8 @@ public class TFTPFunctions {
 							// TODO Auto-generated catch block
 							e1.printStackTrace();
 						}
-				} else	sendPacket = new DatagramPacket(msg, msg.length, receivePacket.getAddress(), sendPort1);
+				} else	
+				sendPacket = new DatagramPacket(msg, msg.length, receivePacket.getAddress(), sendPort1);
 				sendPacketFromSocket(socket1, sendPacket);
 
 				if (verboseMode) {
@@ -258,6 +273,7 @@ public class TFTPFunctions {
 				try {
 					// Block until a datagram is received via sendReceiveSocket.
 					socket1.receive(receivePacket);
+					//connectionPort = receivePacket.getPort();
 				} catch (InterruptedIOException ie) {
 					System.out.println(host1 +" Timed out. Resending packet.");
 					i--;
@@ -292,15 +308,28 @@ public class TFTPFunctions {
 
 				// Check if packet came from correct source. Send back ERROR packet code 5 if
 				// not.
-				//TODO
-				if (sendPort1 != receivePacket.getPort()) {
-					System.out.println("Received Packet from unknown source. Responding with ERROR and continuing.");
-					byte[] err = new byte[] { 0, 5, 0, 5 };
-					sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(),
-							receivePacket.getPort());
-					sendPacketFromSocket(socket1, sendPacket);
-					i--;
-					continue;
+				System.out.println("!!!!!!!!!!!!!!");
+				System.out.println(receivePacket.getPort());
+				if (host1 == "Server") {
+					if (sendPort1 != receivePacket.getPort()) {
+						System.out.println("Received Packet from unknown source. Responding with ERROR code 5 and continuing.");
+						byte[] err = new byte[] { 0, 5, 0, 5 };
+						sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(),
+								receivePacket.getPort());
+						sendPacketFromSocket(socket1, sendPacket);
+						i--;
+						continue;
+					}
+				} else {
+					if (TFTPClient.connectionPort != receivePacket.getPort()) {
+						System.out.println("Received Packet from unknown source. Responding with ERROR code 5 and continuing.");
+						byte[] err = new byte[] { 0, 5, 0, 5 };
+						sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(),
+								receivePacket.getPort());
+						sendPacketFromSocket(socket1, sendPacket);
+						i--;
+						continue;
+					}
 				}
 
 				// Check if packet received is an ERROR Packet
@@ -321,19 +350,18 @@ public class TFTPFunctions {
 				}
 				if (sendPacket.getLength() < 516) {
 					System.out.println(host1 +": Last packet sent.");
-					TFTPClient.finishedRequest = true;
-					TFTPClient.changeMode = true;
 					if (host1 == "Client") {
 						TFTPClient.finishedRequest = true;
 						TFTPClient.changeMode = true;
-					} else if (host1 == "Server"){
-						TFTPClientConnectionThread.doneProcessingRequest = true;
-						TFTPClientConnectionThread.establishedCommunications.remove(receivePacket.getSocketAddress().toString());
-					}
+					} 
 				}
 				blockNum++;
 			}
 			System.out.println("Finished Read");
+			if (host1 == "Server"){
+				TFTPClientConnectionThread.doneProcessingRequest = true;
+				TFTPClientConnectionThread.establishedCommunications.remove(receivePacket.getSocketAddress().toString());
+			}
 		}
 		
 	}
