@@ -1,22 +1,32 @@
+package Iteration1;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.io.UnsupportedEncodingException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class TFTPFunctions {
 
 	private static final int TIMEOUT = 4000;
 	private DatagramPacket receivePacket, sendPacket;
+	public static final int ERROR_CODE_FILE_NOT_FOUND = 1;
+	public static final int ERROR_CODE_ACCESS_VIOLATION = 2;
+	public static final int ERROR_CODE_DISK_FULL = 3;
+	public static final int ERROR_CODE_ILLEGAL_TFTP_OPERATION = 4;
+	public static final int ERROR_CODE_UNKNOWN_TID = 5;
 
-	ArrayList<byte[]> readFileIntoBlocks(String fileName) {
+	ArrayList<byte[]> readFileIntoBlocks(String fileName, DatagramSocket socket, InetAddress address, int sendPort) {
 		ArrayList<byte[]> msgList = new ArrayList<>();
 		byte[] dataBuffer = new byte[512];
 		BufferedInputStream bis;
@@ -30,12 +40,53 @@ public class TFTPFunctions {
 			}
 			bis.close();
 		} catch (IOException e) {
-			e.printStackTrace();
+			if (e instanceof FileNotFoundException) {
+				System.out.println("File [" + fileName + "] not found.\n");
+				// Create an error packet for error 1 "File not found".
+				DatagramPacket errorPacket = createErrorPacket(
+						address, sendPort,
+						ERROR_CODE_FILE_NOT_FOUND,
+						"Unable to find the following file: " + fileName + ". It does not exist.");
+				sendPacketFromSocket(socket, errorPacket);
+			} else {
+				e.printStackTrace();
+			}
 		}
 
 		return msgList;
 	}
 
+	/**
+	 * Creates an error packet given the IP address, port and error message.
+	 * 
+	 * @param address - the IP address of the destination of the packet to be sent
+	 * @param port - the Port number of the destination of the packet to be sent
+	 * @param errCode - the code representing the type of error
+	 * @param errMsg - a detailed error message
+	 * 
+	 * @return - the error packet \
+	 */
+	public DatagramPacket createErrorPacket(InetAddress address, int port, int errCode, String errMsg) {
+		byte[] sbytes = errMsg.getBytes();
+		byte[] buf = new byte[4 + sbytes.length + 1]; // 4 because 2 bytes for opcode, 2 bytes for block number.
+
+		// Opcode
+		buf[0] = 0;
+		buf[1] = 5;
+
+		try {
+			byte[] blockNumberBytes = blockNumBytes(errCode);
+			System.arraycopy(blockNumberBytes, 0, buf, 2, 2);
+		} catch(Exception e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+		System.arraycopy(sbytes, 0, buf, 4, sbytes.length);
+		buf[4 + sbytes.length] = 0;
+
+		return new DatagramPacket(buf, buf.length, address, port);	
+	}
+	
 	/**
 	 * Converts the blocknumber as an int into a 2 byte array
 	 * 
@@ -157,6 +208,27 @@ public class TFTPFunctions {
 				len = receivePacket.getLength();
 				data = receivePacket.getData();
 
+				// Check for error 1 "Invalid file name".
+				if (data[1] == 5 && data[3] == 1) {
+					System.out.println("\nERROR - " + new String(Arrays.copyOfRange(data, 4, data.length), "UTF-8") + "\n");
+					// TODO Move this to seperate finish()?
+					if (host == "Client") {
+						TFTPClient.finishedRequest = true;
+						TFTPClient.changeMode = true;
+					} else if (host == "Server") {
+						TFTPClientConnectionThread.doneProcessingRequest = true;
+						TFTPClientConnectionThread.establishedCommunications
+								.remove(receivePacket.getSocketAddress().toString());
+					}
+					try {
+						out.close();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					break;
+				}
+				
 				// Check if ERROR packet was received
 				if (data[1] == 5 && data[3] == 5) {
 					System.out.println("ERROR code 5: ACK Packet sent to wrong port. Waiting for proper DATA.");
@@ -238,7 +310,6 @@ public class TFTPFunctions {
 	 */
 	void transferFiles(DatagramSocket socket, DatagramPacket receivePacket, String host, String fileName,
 			int sendPort, ArrayList<Integer> processedACKBlocks, boolean verboseMode) {
-
 		int blockNum = 1; // You start at data block one when reading from a server.
 		byte[] data = new byte[100];
 		if (host == "Server")
@@ -246,7 +317,16 @@ public class TFTPFunctions {
 		else
 			receivePacket = new DatagramPacket(data, data.length);
 
-		ArrayList<byte[]> msgBuffer = readFileIntoBlocks(fileName);
+		InetAddress sendAddress = null;
+		try {
+			 sendAddress = 
+					host == "Client" ? InetAddress.getByName(TFTPClient.ipAddress) : receivePacket.getAddress();
+		} catch (UnknownHostException e2) {
+			e2.printStackTrace();
+			return; // Return since we will not be able to send a packet without a valid IP address.
+		}
+		
+		ArrayList<byte[]> msgBuffer = readFileIntoBlocks(fileName, socket, sendAddress,	sendPort);
 
 		if (host == "Server") {
 			try {
@@ -263,17 +343,8 @@ public class TFTPFunctions {
 			msg[1] = 3;
 			msg[2] = blockNumsInBytes[0];
 			msg[3] = blockNumsInBytes[1];
-			// InetAddress from client class
-			if (host == "Client") {
-				try {
-					sendPacket = new DatagramPacket(msg, msg.length, InetAddress.getByName(TFTPClient.ipAddress),
-							sendPort);
-				} catch (UnknownHostException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-			} else
-				sendPacket = new DatagramPacket(msg, msg.length, receivePacket.getAddress(), sendPort);
+			
+			sendPacket = new DatagramPacket(msg, msg.length, sendAddress, sendPort);
 
 			sendPacketFromSocket(socket, sendPacket);
 
@@ -332,6 +403,16 @@ public class TFTPFunctions {
 				continue;
 			}
 
+			// Check for error 1 "Invalid file name".
+			if (data[1] == 5 && data[3] == 1) {
+				try {
+					System.out.println("\nERROR - " + new String(Arrays.copyOfRange(data, 4, data.length), "UTF-8") + "\n");
+				} catch (UnsupportedEncodingException e) {
+					e.printStackTrace();
+				}
+				continue;
+			}
+			
 			// Check if packet received is an ERROR Packet
 			if (receivePacket.getData()[1] == 5) {
 				if (receivePacket.getData()[3] == 5) {

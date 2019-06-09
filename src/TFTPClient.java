@@ -1,3 +1,4 @@
+package Iteration1;
 
 // TFTPClient.java
 // This class is the client side for a very simple assignment based on TFTP on
@@ -14,8 +15,8 @@ public class TFTPClient extends TFTPFunctions {
 	private DatagramSocket sendReceiveSocket;
 	static int connectionPort;
 	private static boolean verboseMode = false; // false for quiet and true for verbose
-	static String ipAddress = "192.168.0.21";
-	private static String clientDirectory = "C:\\Users\\Sherry Wang\\Documents\\GitHub\\SYSC3303_Project\\src";
+	static String ipAddress = "192.168.1.32";
+	private static String clientDirectory = "C:\\Alexei's Stuff\\Carleton University";
 	static boolean finishedRequest = false;
 	static boolean changeMode = true;
 	private boolean running = true;
@@ -99,7 +100,7 @@ public class TFTPClient extends TFTPFunctions {
 			// while (found){ //keep asking for file until valid file is found in directory
 			System.out.println("\nEnter the name of the file: ");
 			fileName = sc.nextLine();
-			// CHECK IF FILE EXISTS
+			// TODO CHECK IF FILE EXISTS
 			// }
 
 			byte[] msg = new byte[100], // message we send
@@ -216,7 +217,7 @@ public class TFTPClient extends TFTPFunctions {
 						ackVerified = Arrays.equals(writeAck, data);
 					}
 
-					processedACKBlocks.add(data[2] * 10 + data[3]); // Add this point it should be ACK 0.
+					processedACKBlocks.add(data[2] * 10 + data[3]); // A this point it should be ACK 0.
 					transferFiles(sendReceiveSocket, receivePacket, "Client", fileName, sendPort, processedACKBlocks,
 							verboseMode);
 				}
