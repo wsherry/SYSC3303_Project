@@ -1,17 +1,5 @@
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InterruptedIOException;
-import java.io.UnsupportedEncodingException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
+import java.io.*;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -130,13 +118,14 @@ public class TFTPFunctions {
 	// client: sendport = -1 or 23 if test mode
 	void receiveFiles(String fileName, int sendPort, String host, DatagramSocket socket, boolean testMode,
 			boolean requestResponse, boolean verboseMode, int connectionPort) {
+		File file = new File(fileName);
 		ArrayList<Integer> processedBlocks = new ArrayList<>();
 		if (testMode)
 			sendPort = 23;
 		try {
 			if (host == "Server")
 				socket.setSoTimeout(TIMEOUT);
-			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(fileName));
+			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(file));
 
 			while (true) {
 				byte[] data = new byte[516];
@@ -161,7 +150,7 @@ public class TFTPFunctions {
 				} else {
 					// clientserverthread goes here first
 					try {
-						// Block until a datagram is received via sendReceiveSocket.
+						// Block until a datagram is received via sendReceiveSocket or until idle timeout occurs.
 						socket.setSoTimeout(300000);
 						socket.receive(receivePacket);
 						socket.setSoTimeout(TIMEOUT);
@@ -219,7 +208,6 @@ public class TFTPFunctions {
 						TFTPClientConnectionThread.establishedCommunications
 								.remove(receivePacket.getSocketAddress().toString());
 					}
-					// Close the buffered output stream.
 					try {
 						out.close();
 					} catch (IOException e) {
@@ -247,6 +235,31 @@ public class TFTPFunctions {
 						out.write(data, 4, len - 4);
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
+						if(file.getFreeSpace() < len - 4) {
+							System.out.println("No space on disk. Terminating tranfer.");
+							//Sending ERROR packet for Error code 3
+							byte[] err = new byte[] {0,5,0,3};
+							sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), sendPort);
+							sendPacketFromSocket(socket, sendPacket);
+							//Deleting the incomplete file
+							file.delete();
+							
+							if (host == "Client") {
+								TFTPClient.finishedRequest = true;
+								TFTPClient.changeMode = true;
+							} else if (host == "Server") {
+								TFTPClientConnectionThread.doneProcessingRequest = true;
+								TFTPClientConnectionThread.establishedCommunications
+										.remove(receivePacket.getSocketAddress().toString());
+							}
+							try {
+								out.close();
+							} catch (IOException ie) {
+								// TODO Auto-generated catch block
+								ie.printStackTrace();
+							}
+							break;
+						}
 						e.printStackTrace();
 					}
 					processedBlocks.add(data[2] * 10 + data[3]);
