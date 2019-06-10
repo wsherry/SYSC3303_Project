@@ -1,7 +1,6 @@
-package Iteration1;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -220,12 +219,15 @@ public class TFTPFunctions {
 						TFTPClientConnectionThread.establishedCommunications
 								.remove(receivePacket.getSocketAddress().toString());
 					}
+					// Close the buffered output stream.
 					try {
 						out.close();
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
 					}
+					// Delete the file that has been created at the beginning of the method.
+					new File(fileName).delete(); 
 					break;
 				}
 				
