@@ -76,7 +76,13 @@ public class TFTPClientConnectionThread extends TFTPFunctions implements Runnabl
 		int len;
 
 		while (true) { // loop forever
-
+			try {
+				Thread.sleep(15);
+			} catch (InterruptedException e2) {
+				// TODO Auto-generated catch block
+				e2.printStackTrace();
+			}
+			
 			if (doneProcessingRequest) {
 				byte[] data = new byte[100];
 				receivePacket = new DatagramPacket(data, data.length);

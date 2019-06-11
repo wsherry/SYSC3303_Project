@@ -119,6 +119,7 @@ public class TFTPFunctions {
 	void receiveFiles(String fileName, int sendPort, String host, DatagramSocket socket, boolean testMode,
 			boolean requestResponse, boolean verboseMode, int connectionPort) {
 		File file = new File(fileName);
+		if (file.exists()) System.out.println("\n-----------WARNING, ERROR CODE 6. File Already Exists. Overwriting file...----------");
 		ArrayList<Integer> processedBlocks = new ArrayList<>();
 		if (testMode)
 			sendPort = 23;
