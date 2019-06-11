@@ -154,7 +154,6 @@ public class TFTPClientConnectionThread extends TFTPFunctions implements Runnabl
 		private DatagramSocket sendReceiveSocket;
 		private DatagramPacket receivePacket, sendPacket;
 		private boolean verboseMode = false; // false for quiet and true for verbose
-		private static final int TIMEOUT = 4000;
 		private Request request;
 
 		public TFTPsendThread(Request request, DatagramPacket receivePacket, boolean verboseMode) {

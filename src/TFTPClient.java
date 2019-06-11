@@ -20,7 +20,6 @@ public class TFTPClient extends TFTPFunctions {
 	static boolean finishedRequest = false;
 	static boolean changeMode = true;
 	private boolean running = true;
-	private static final int TIMEOUT = 3000; // Delay for timeout when waiting to receive file
 	private ArrayList<Integer> processedACKBlocks = new ArrayList<>();
 
 	public static enum Mode {
@@ -55,6 +54,7 @@ public class TFTPClient extends TFTPFunctions {
 		String input = "";
 		boolean received = false;
 		byte readWrite = (byte) 1; // default value for initialization
+		int timeoutCount = 0;
 
 		while (running) {
 			// After a request has been completed the user gets prompted
@@ -188,6 +188,13 @@ public class TFTPClient extends TFTPFunctions {
 						// Block until a datagram is received via sendReceiveSocket.
 						sendReceiveSocket.receive(receivePacket);
 					} catch (InterruptedIOException ie) {
+						timeoutCount++;
+						if(timeoutCount == MAX_TIMEOUT) {
+							System.out.println("Maximum timeouts occurred without response. Terminating transfer.");
+							finishedRequest = true;
+							changeMode = true;
+							break;
+						}
 						System.out.println("Client Timed out. Resending packet.");
 						continue;
 					} catch (IOException e) {
