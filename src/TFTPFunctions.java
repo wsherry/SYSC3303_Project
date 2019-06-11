@@ -120,6 +120,7 @@ public class TFTPFunctions {
 	void receiveFiles(String fileName, int sendPort, String host, DatagramSocket socket, boolean testMode,
 			boolean requestResponse, boolean verboseMode, int connectionPort) {
 		File file = new File(fileName);
+		int fileSize = 0;
 		if (file.exists()) System.out.println("\n-----------WARNING, ERROR CODE 6. File Already Exists. Overwriting file...----------");
 		ArrayList<Integer> processedBlocks = new ArrayList<>();
 		if (testMode)
@@ -234,33 +235,9 @@ public class TFTPFunctions {
 					// This block number has not been processed. Write it to the file.
 					try {
 						out.write(data, 4, len - 4);
+						fileSize += len-4;
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
-						if(file.getFreeSpace() < len - 4) {
-							System.out.println("No space on disk. Terminating tranfer.");
-							//Sending ERROR packet for Error code 3
-							byte[] err = new byte[] {0,5,0,3};
-							sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), sendPort);
-							sendPacketFromSocket(socket, sendPacket);
-							//Deleting the incomplete file
-							file.delete();
-							
-							if (host.equals("Client")) {
-								TFTPClient.finishedRequest = true;
-								TFTPClient.changeMode = true;
-							} else if (host.equals("Server")) {
-								TFTPClientConnectionThread.doneProcessingRequest = true;
-								TFTPClientConnectionThread.establishedCommunications
-										.remove(receivePacket.getSocketAddress().toString());
-							}
-							try {
-								out.close();
-							} catch (IOException ie) {
-								// TODO Auto-generated catch block
-								ie.printStackTrace();
-							}
-							break;
-						}
 						e.printStackTrace();
 					}
 					processedBlocks.add(data[2] * 10 + data[3]);
@@ -305,7 +282,15 @@ public class TFTPFunctions {
 						out.close();
 					} catch (IOException e) {
 						// TODO Auto-generated catch block
-						e.printStackTrace();
+						if(file.getFreeSpace() < fileSize) {
+							System.out.println("No space on disk. Terminating tranfer.");
+							//Sending ERROR packet for Error code 3
+							byte[] err = new byte[] {0,5,0,3};
+							sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), sendPort);
+							sendPacketFromSocket(socket, sendPacket);
+							//Deleting the incomplete file
+							file.delete();
+						}
 					}
 					break;
 				}
