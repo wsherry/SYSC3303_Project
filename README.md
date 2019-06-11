@@ -80,6 +80,38 @@ Pragya Singh:
 -Read me 
 -Created the error simulator for the four cases for error code 4 (Opcode, Mode , Block number and filename validity)
 
+Iteration 4: 
+
+Sherry Wang: 
+-Refactored the code
+-Implemented error code 2
+
+Alexei Tchekansky:
+-Error handling for error code 1 
+-Fixed the simulation ACK bug from iteration 3.
+
+Ben Bozec:
+-Error handling for Error code 3 (server and client)
+
+Alan Lin:
+
+
+Pragya Singh:
+- UML Class diagram 
+- Sequence Diagram 
+- State Machine Diagrams 
+- Use Case Diagrams 
+- Read me 
+
+Added Features since Iteration 3:
+- Deal with I/O errors that can occur 
+- Preparing transmitte, recieve and handeling TFTP Error packets 
+- The packets error codes we are dealing with is 1,2,3,6
+		-Error code 1: File not Found 
+		-Error code 2: Access Violation 
+		-Error code 3: Disk Full 
+		-Error code 6: File already exists 
+
 Added Features Since Iteration 2:
 -Sim starts a new thread, with a different TID and sends the packet to either client or server
 - User is able to select error code 5
@@ -115,6 +147,11 @@ Project Overview for Iteration 3:
 Implementing errors that can occur in aTFTP packets that is received.   TFTP
 ERROR packets  should be able to prepared, transmitted,received, and handled (Error Code 4, 5) must be prepared, transmitted,
 received, and handled. There will be an assumption that no input file errors, in this iteration. 
+
+Project Overview for Iteration 4:
+Add support for ERROR packets both the client and server code
+from Iteration #3. Must catch exceptions thrown by your Java read/write
+code and translate the exceptions to the appropriate TFTP error codes. Direct testing should be functional for all the errors withouth having to update the error simulator.
 
 Errors Iteration 2:
 TFTPClientConnection currently doesn’t use port 69 for receiving data
@@ -164,3 +201,4 @@ Iteration 3:
 3. Run client.java as java application and follow the command line prompts. This incluldes running in normal or test mode, quiet or verbose mode, setting the IP address of the destination (server's IP)
 and setting the directory of the client (i.e. "M:\SYSC3303_Project"). When prompted for the IP adress, paste the IP adress that was copied/noted from the server.
 ** run in the above order**
+Iteration 4: 
