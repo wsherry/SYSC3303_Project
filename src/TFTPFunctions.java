@@ -244,10 +244,10 @@ public class TFTPFunctions {
 							//Deleting the incomplete file
 							file.delete();
 							
-							if (host == "Client") {
+							if (host.equals("Client")) {
 								TFTPClient.finishedRequest = true;
 								TFTPClient.changeMode = true;
-							} else if (host == "Server") {
+							} else if (host.equals("Server")) {
 								TFTPClientConnectionThread.doneProcessingRequest = true;
 								TFTPClientConnectionThread.establishedCommunications
 										.remove(receivePacket.getSocketAddress().toString());
@@ -430,6 +430,14 @@ public class TFTPFunctions {
 			
 			// Check if packet received is an ERROR Packet
 			if (receivePacket.getData()[1] == 5) {
+				if(receivePacket.getData()[3] == 3) {
+					System.out.println("ERROR code 3: no space on disk or in allocation. Terminating transfer");
+					if (host == "Client") {
+						TFTPClient.finishedRequest = true;
+						TFTPClient.changeMode = true;
+					}
+					break;
+				}
 				if (receivePacket.getData()[3] == 5) {
 					System.out.println("ERROR code 5: DATA Packet sent to wrong port. Resending last DATA packet.");
 					i--;
