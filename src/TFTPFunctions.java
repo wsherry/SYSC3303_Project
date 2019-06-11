@@ -26,6 +26,18 @@ public class TFTPFunctions {
 				System.arraycopy(dataBuffer, 0, msg, 4, bytesRead);
 				msgList.add(msg);
 			}
+			//Checks if the last block is is 516 bytes (512 data bytes)
+			//If so, the file is a multiple of 512 data bytes and needs a empty dat packet at the end
+			if (msgList.get(msgList.size()-1).length == 516) {
+				byte[] temp = new byte[5]; //temp byte array for last data packet
+				temp[0] = 0;
+				temp[1] = 3;
+				byte[] blockNums = blockNumBytes(5);
+				temp[2] = 0;
+				temp[3] = 0;
+				temp[4] = 0;
+				msgList.add(temp);
+			}
 			bis.close();
 		} catch (IOException e) {
 			if (e instanceof FileNotFoundException) {
@@ -121,6 +133,7 @@ public class TFTPFunctions {
 			boolean requestResponse, boolean verboseMode, int connectionPort) {
 		File file = new File(fileName);
 		int fileSize = 0;
+		//print message for overwriting existing file
 		if (file.exists()) System.out.println("\n-----------WARNING, ERROR CODE 6. File Already Exists. Overwriting file...----------");
 		ArrayList<Integer> processedBlocks = new ArrayList<>();
 		if (testMode)
