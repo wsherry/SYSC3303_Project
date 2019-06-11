@@ -5,7 +5,8 @@ import java.util.Arrays;
 
 public class TFTPFunctions {
 
-	private static final int TIMEOUT = 4000;
+	protected static final int TIMEOUT = 4000;
+	protected static final int MAX_TIMEOUT = 5;
 	private DatagramPacket receivePacket, sendPacket;
 	public static final int ERROR_CODE_FILE_NOT_FOUND = 1;
 	public static final int ERROR_CODE_ACCESS_VIOLATION = 2;
@@ -123,8 +124,7 @@ public class TFTPFunctions {
 		if (testMode)
 			sendPort = 23;
 		try {
-			if (host == "Server")
-				socket.setSoTimeout(TIMEOUT);
+			socket.setSoTimeout(TIMEOUT);
 			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(file));
 
 			while (true) {
@@ -325,6 +325,7 @@ public class TFTPFunctions {
 	 */
 	void transferFiles(DatagramSocket socket, DatagramPacket receivePacket, String host, String fileName,
 			int sendPort, ArrayList<Integer> processedACKBlocks, boolean verboseMode) {
+		int timeoutCount = 0;
 		int blockNum = 1; // You start at data block one when reading from a server.
 		byte[] data = new byte[100];
 		if (host == "Server")
@@ -343,12 +344,10 @@ public class TFTPFunctions {
 		
 		ArrayList<byte[]> msgBuffer = readFileIntoBlocks(fileName, socket, sendAddress,	sendPort);
 
-		if (host == "Server") {
-			try {
-				socket.setSoTimeout(TIMEOUT);
-			} catch (SocketException e1) {
-				e1.printStackTrace();
-			}
+		try {
+			socket.setSoTimeout(TIMEOUT);
+		} catch (SocketException e1) {
+			e1.printStackTrace();
 		}
 
 		for (int i = 0; i < msgBuffer.size(); i++) {
@@ -374,6 +373,15 @@ public class TFTPFunctions {
 				// Block until a datagram is received via sendReceiveSocket.
 				socket.receive(receivePacket);
 			} catch (InterruptedIOException ie) {
+				timeoutCount++;
+				if(timeoutCount == MAX_TIMEOUT) {
+					System.out.println("Maximum timeouts occurred without response. Terminating transfer.");
+					if (host.equals("Client")) {
+						TFTPClient.finishedRequest = true;
+						TFTPClient.changeMode = true;
+					}
+					break;
+				}
 				System.out.println(host + " Timed out. Resending packet.");
 				i--;
 				continue;
@@ -381,6 +389,8 @@ public class TFTPFunctions {
 				e.printStackTrace();
 				System.exit(1);
 			}
+			//reset timeout counter
+			timeoutCount = 0;
 
 			// Check if the received packet is a duplicate ACK. If it is, then we should not
 			// be re-sending the Nth data packet for the ACK. Sorcerer's Apprentice Bug.
