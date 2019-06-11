@@ -1,5 +1,3 @@
-package Iteration1;
-
 // TFTPSim.java
 // This class is the beginnings of an error simulator for a simple TFTP server 
 // based on UDP/IP. The simulator receives a read or write packet from a client and
@@ -195,15 +193,14 @@ public class TFTPSim extends TFTPFunctions {
 			// Send the datagram packet to the server via the send/receive socket.
 			sendPacketFromSocket(sendReceiveSocket, sendPacket);
 
-			if (data[1] == 3) { // checking if last data packet
-				if (len < 516) {
-					System.out.println("Received all data packets");
-					serverPort = 69;
-					configSim();
-					continue;
-				}
-				receivedType = Type.DATA;
+			if (checkIfLastDataPacket(data, sendReceiveSocket, sendSocket, clientAddress, clientPort)) {
+				System.out.println("Received all data packets");
+				serverPort = 69;
+				configSim();
+				continue;
 			}
+			
+			receivedType = getType(data);
 
 			// Construct a DatagramPacket for receiving packets up
 			// to 100 bytes long (the length of the byte array).
@@ -264,14 +261,13 @@ public class TFTPSim extends TFTPFunctions {
 
 			sendPacketFromSocket(sendSocket, sendPacket);
 
-			if (data[1] == 3) { // checking if last data packet
-				if (len < 516) {
-					System.out.println("Received all data packets");
-					configSim();
-					continue;
-				}
-				receivedType = Type.DATA;
+			if (checkIfLastDataPacket(data, receiveSocket, sendReceiveSocket, InetAddress.getLocalHost(), serverPort)) {
+				System.out.println("Received all data packets");
+				configSim(); // Re-config SIM and continue to wait for packets.
+				continue; 
 			}
+			
+			receivedType = getType(data);
 
 			System.out.println("Simulator: packet sent using port " + sendSocket.getLocalPort());
 			System.out.println();
@@ -280,6 +276,39 @@ public class TFTPSim extends TFTPFunctions {
 		} // end of loop
 	}
 
+	/**
+	 * Helper method that checks if we have received the last data packet. If so, a last ACK N for data packet N is first received and then forwarded to either the client or server.
+	 * @param data - the data packet to check to see if it's the last one.
+	 * @param receiveSocket - the socket that is to receive the last ACK.
+	 * @param sendSocket - the socket on which to send the last ACK.
+	 * @param addressToSendTo - the address to send the last ACK to.
+	 * @param portToSendTo - the port to send the last ACK to.
+	 * @return boolean - true if it WAS the last data packet and false otherwise.
+	 */
+	private boolean checkIfLastDataPacket(byte[] data, DatagramSocket receiveSocket, DatagramSocket sendSocket, InetAddress addressToSendTo, int portToSendTo) {
+		if (data[1] == 3 && sendPacket.getLength() < 516) {
+			// Wait to receive the last ACK.
+			data = new byte[516];
+			receivePacket = new DatagramPacket(data, data.length);
+			receivePacketFromSocket(receiveSocket, receivePacket);
+			System.out.println("Simulator: packet received.");			
+			if (verboseMode) {
+				verboseMode(receivePacket.getAddress(), receivePacket.getPort(), data.length, data);
+			}
+			// Forward the last ACK.
+			sendPacket = new DatagramPacket(data, receivePacket.getLength(), addressToSendTo, portToSendTo);
+			sendPacketFromSocket(sendSocket, sendPacket);
+			System.out.println("Simulator: packet sent.");
+			if (verboseMode) {
+				verboseMode(addressToSendTo, portToSendTo, data.length, data);
+			}
+ 			
+			return true;
+		} else {
+			return false;
+		}
+	}
+	
 	/**
 	 * "Menu" for configuring the settings of client application
 	 */
