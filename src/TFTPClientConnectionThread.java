@@ -82,8 +82,8 @@ public class TFTPClientConnectionThread extends TFTPFunctions implements Runnabl
 				// TODO Auto-generated catch block
 				e2.printStackTrace();
 			}
-			
 			if (doneProcessingRequest) {
+				System.out.println("within IF");
 				byte[] data = new byte[100];
 				receivePacket = new DatagramPacket(data, data.length);
 				System.out.println("------------------------------------------------------");
@@ -144,6 +144,7 @@ public class TFTPClientConnectionThread extends TFTPFunctions implements Runnabl
 
 				Runnable reqThread = new TFTPsendThread(request, receivePacket, verboseMode);
 				new Thread(reqThread).start();
+				System.out.println(doneProcessingRequest);
 
 			}
 		} // end of loop
@@ -180,7 +181,7 @@ public class TFTPClientConnectionThread extends TFTPFunctions implements Runnabl
 				byte[] response = writeResp;
 				send(response);
 			}
-
+			System.out.println(doneProcessingRequest);
 		}
 
 		private void send(byte[] response) {

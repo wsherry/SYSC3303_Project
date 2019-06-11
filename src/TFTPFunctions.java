@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.*;
+import java.nio.file.AccessDeniedException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -39,7 +40,15 @@ public class TFTPFunctions {
 				msgList.add(temp);
 			}
 			bis.close();
-		} catch (IOException e) {
+//		}
+//		catch (AccessDeniedException e2) {
+//			System.out.println("Access Violation! Sending Error Packet 2.");
+//			//Sending ERROR packet for Error code 2
+//			byte[] err = new byte[] {0,5,0,2};
+//			sendPacket = new DatagramPacket(err, err.length, address, sendPort);
+//			sendPacketFromSocket(socket, sendPacket);
+//			e2.printStackTrace();
+		}catch (IOException e) {
 			if (e instanceof FileNotFoundException) {
 				System.out.println("File [" + fileName + "] not found.\n");
 				// Create an error packet for error 1 "File not found".
@@ -128,9 +137,8 @@ public class TFTPFunctions {
 		}
 	}
 
-	// client: sendport = -1 or 23 if test mode
 	void receiveFiles(String fileName, int sendPort, String host, DatagramSocket socket, boolean testMode,
-			boolean requestResponse, boolean verboseMode, int connectionPort) {
+		boolean requestResponse, boolean verboseMode, int connectionPort) {
 		File file = new File(fileName);
 		int fileSize = 0;
 		//print message for overwriting existing file
@@ -140,8 +148,9 @@ public class TFTPFunctions {
 			sendPort = 23;
 		try {
 			socket.setSoTimeout(TIMEOUT);
-			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(file));
-
+//			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(file));
+			boolean fileOpen = false;
+			BufferedOutputStream out = null;
 			while (true) {
 				byte[] data = new byte[516];
 				receivePacket = new DatagramPacket(data, data.length);
@@ -171,7 +180,7 @@ public class TFTPFunctions {
 						socket.setSoTimeout(TIMEOUT);
 					} catch (InterruptedIOException io) {
 						System.out.println(host + " has exceeded idle time. Cancelling transfer.");
-						if (host == "Client") {
+						if (host.equals("Client")) {
 							TFTPClient.finishedRequest = true;
 							TFTPClient.changeMode = true;
 						}
@@ -181,7 +190,16 @@ public class TFTPFunctions {
 						System.exit(1);
 					}
 				}
-				if (host == "Server") {
+				System.out.println("TRY");
+				System.out.println(receivePacket.getAddress());
+				System.out.println(receivePacket.getPort());
+
+				
+				if (!fileOpen) {
+					out = new BufferedOutputStream(new FileOutputStream(file));
+					fileOpen = true;
+				}
+				if (host.equals("Server")) {
 					if (TFTPClientConnectionThread.establishedCommunications
 							.contains(receivePacket.getSocketAddress().toString())
 							&& (receivePacket.getData()[0] == 0 && receivePacket.getData()[1] == 2)) {
@@ -215,10 +233,10 @@ public class TFTPFunctions {
 				if (data[1] == 5 && data[3] == 1) {
 					System.out.println("\nERROR - " + new String(Arrays.copyOfRange(data, 4, data.length), "UTF-8") + "\n");
 					// TODO Move this to seperate finish()?
-					if (host == "Client") {
+					if (host.equals("Client")) {
 						TFTPClient.finishedRequest = true;
 						TFTPClient.changeMode = true;
-					} else if (host == "Server") {
+					} else if (host.equals("Server")) {
 						TFTPClientConnectionThread.doneProcessingRequest = true;
 						TFTPClientConnectionThread.establishedCommunications
 								.remove(receivePacket.getSocketAddress().toString());
@@ -249,8 +267,34 @@ public class TFTPFunctions {
 					try {
 						out.write(data, 4, len - 4);
 						fileSize += len-4;
-					} catch (IOException e) {
+					} 
+					catch (IOException e) {
 						// TODO Auto-generated catch block
+						if(file.getFreeSpace() < len - 4) {
+							System.out.println("No space on disk. Terminating tranfer.");
+							//Sending ERROR packet for Error code 3
+							byte[] err = new byte[] {0,5,0,3};
+							sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), sendPort);
+							sendPacketFromSocket(socket, sendPacket);
+							//Deleting the incomplete file
+							file.delete();
+							
+							if (host.equals("Client")) {
+								TFTPClient.finishedRequest = true;
+								TFTPClient.changeMode = true;
+							} else if (host.equals("Server")) {
+								TFTPClientConnectionThread.doneProcessingRequest = true;
+								TFTPClientConnectionThread.establishedCommunications
+										.remove(receivePacket.getSocketAddress().toString());
+							}
+							try {
+								out.close();
+							} catch (IOException ie) {
+								// TODO Auto-generated catch block
+								ie.printStackTrace();
+							}
+							break;
+						}
 						e.printStackTrace();
 					}
 					processedBlocks.add(data[2] * 10 + data[3]);
@@ -268,7 +312,7 @@ public class TFTPFunctions {
 				}
 
 				byte[] ack = new byte[] { 0, 4, data[2], data[3] };
-				if (host == "Client") {
+				if (host.equals("Client")) {
 					sendPacket = new DatagramPacket(ack, ack.length, receivePacket.getAddress(), sendPort);
 				} else {
 					sendPacket = new DatagramPacket(ack, ack.length, receivePacket.getAddress(),
@@ -283,14 +327,6 @@ public class TFTPFunctions {
 
 				if (len < 516) {
 					System.out.println("Received all data packets");
-					if (host == "Client") {
-						TFTPClient.finishedRequest = true;
-						TFTPClient.changeMode = true;
-					} else if (host == "Server") {
-						TFTPClientConnectionThread.doneProcessingRequest = true;
-						TFTPClientConnectionThread.establishedCommunications
-								.remove(receivePacket.getSocketAddress().toString());
-					}
 					try {
 						out.close();
 					} catch (IOException e) {
@@ -308,9 +344,33 @@ public class TFTPFunctions {
 					break;
 				}
 			}
-		} catch (IOException e2) {
+		}
+		catch (FileNotFoundException e2) {
+			System.out.println("Access Violation. Sending Error Packet 2.");
+			System.out.println("CATCH");
+			//Sending ERROR packet for Error code 2
+			byte[] err = new byte[] {0,5,0,2};
+			sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), sendPort);
+			sendPacketFromSocket(socket, sendPacket);
+			if (host.equals("Client")) {
+				TFTPClient.finishedRequest = true;
+				TFTPClient.changeMode = true;
+			} else if (host.equals("Server")) {
+				TFTPClientConnectionThread.doneProcessingRequest = true;
+				TFTPClientConnectionThread.establishedCommunications.remove(receivePacket.getSocketAddress().toString());
+			}
+		}
+		catch (IOException e3) {
 			// TODO Auto-generated catch block
-			e2.printStackTrace();
+			e3.printStackTrace();
+		}
+		if (host.equals("Client")) {
+			TFTPClient.finishedRequest = true;
+			TFTPClient.changeMode = true;
+		} else if (host.equals("Server")) {
+			TFTPClientConnectionThread.doneProcessingRequest = true;
+			TFTPClientConnectionThread.establishedCommunications.remove(receivePacket.getSocketAddress().toString());
+			System.out.println("FUNCTIONS:" + TFTPClientConnectionThread.doneProcessingRequest);
 		}
 	}
 
@@ -327,15 +387,14 @@ public class TFTPFunctions {
 		int timeoutCount = 0;
 		int blockNum = 1; // You start at data block one when reading from a server.
 		byte[] data = new byte[100];
-		if (host == "Server")
+		if (host.equals("Server"))
 			receivePacket.setData(data, 0, data.length);
 		else
 			receivePacket = new DatagramPacket(data, data.length);
 
 		InetAddress sendAddress = null;
 		try {
-			 sendAddress = 
-					host == "Client" ? InetAddress.getByName(TFTPClient.ipAddress) : receivePacket.getAddress();
+			 sendAddress = host.equals("Client") ? InetAddress.getByName(TFTPClient.ipAddress) : receivePacket.getAddress();
 		} catch (UnknownHostException e2) {
 			e2.printStackTrace();
 			return; // Return since we will not be able to send a packet without a valid IP address.
@@ -405,7 +464,7 @@ public class TFTPFunctions {
 
 			// Check if the received packet is a duplicate read request from a socket and
 			// port that is being handled. If so, ignore the packet and continue waiting.
-			if (host == "Server") {
+			if (host.equals("Server")) {
 				if (TFTPClientConnectionThread.establishedCommunications
 						.contains(receivePacket.getSocketAddress().toString())
 						&& (receivePacket.getData()[0] == 0 && receivePacket.getData()[1] == 1)) {
@@ -417,8 +476,8 @@ public class TFTPFunctions {
 
 			// Check if packet came from correct source. Send back ERROR packet code 5 if
 			// not.
-			if ((host == "Server" && sendPort != receivePacket.getPort())
-					|| (host == "Client" && TFTPClient.connectionPort != receivePacket.getPort())) {
+			if ((host.equals("Server") && sendPort != receivePacket.getPort())
+					|| (host.equals("Client") && TFTPClient.connectionPort != receivePacket.getPort())) {
 				System.out.println("Received Packet from unknown source. Responding with ERROR code 5 and continuing.");
 				byte[] err = new byte[] { 0, 5, 0, 5 };
 				sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), receivePacket.getPort());
@@ -452,6 +511,10 @@ public class TFTPFunctions {
 					i--;
 					continue;
 				}
+				if(receivePacket.getData()[3] == 2) {
+					System.out.println("ERROR code 2: Access Denied.");
+					break;
+				}
 			}
 
 			int len = receivePacket.getLength();
@@ -463,7 +526,7 @@ public class TFTPFunctions {
 			}
 			if (sendPacket.getLength() < 516) {
 				System.out.println(host + ": Last packet sent.");
-				if (host == "Client") {
+				if (host.equals("Client")) {
 					TFTPClient.finishedRequest = true;
 					TFTPClient.changeMode = true;
 				}
@@ -471,7 +534,7 @@ public class TFTPFunctions {
 			blockNum++;
 		}
 		System.out.println("Finished Read");
-		if (host == "Server") {
+		if (host.equals("Server")) {
 			TFTPClientConnectionThread.doneProcessingRequest = true;
 			TFTPClientConnectionThread.establishedCommunications.remove(receivePacket.getSocketAddress().toString());
 		}

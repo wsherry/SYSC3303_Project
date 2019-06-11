@@ -15,8 +15,8 @@ public class TFTPClient extends TFTPFunctions {
 	private DatagramSocket sendReceiveSocket;
 	static int connectionPort;
 	private static boolean verboseMode = false; // false for quiet and true for verbose
-	static String ipAddress = "192.168.1.32";
-	private static String clientDirectory = "C:\\Alexei's Stuff\\Carleton University";
+	static String ipAddress = "192.168.0.21";
+	private static String clientDirectory = "C:\\Users\\Sherry Wang\\Documents\\GitHub\\SYSC3303_Project\\src";
 	static boolean finishedRequest = false;
 	static boolean changeMode = true;
 	private boolean running = true;
