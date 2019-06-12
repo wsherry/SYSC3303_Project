@@ -61,7 +61,7 @@ public class TFTPClient extends TFTPFunctions {
 			// to enter the configuration "menu" again
 			// TO BE IMPLEMENTED AFTER FILE TRANSFER IMPLEMENTATION IS COMPLETED
 			if (finishedRequest) { // finishedRequest should be true after a file has been fully read or written
-				System.out.println("Enter 1 to change configurations or nothing to leave unchanged: ");
+				System.out.println("\nEnter 1 to change configurations or nothing to leave unchanged: ");
 				while (!(input.equals("1") || input.equals(""))) {
 					input = sc.nextLine();
 					if (input.equals("1"))
@@ -268,26 +268,37 @@ public class TFTPClient extends TFTPFunctions {
 		}
 		System.out.println("Running in " + (verboseMode ? "verbose" : "quiet") + " mode");
 
-		input = ""; // reset input
-		System.out.println("\nCurrent IP is: " + (ipAddress.equals("") ? "undefined" : ipAddress));
-		// option to set the IP address.
-		// User must input IP address at the first launch.
-		// Once an IP has been set, the user can enter nothing to keep it unchanged.
-		while (input.equals("")) {
-			System.out.println("Enter the IP address of server or nothing to keep IP address unchanged: ");
-			input = sc.nextLine();
-
-			if (input.equals("")) {
-				if (ipAddress.equals(""))
-					System.out.println("An IP has not been entered yet!");
-				else
-					input = "entered"; // set input to arbitrary string to leave loop
-			} else {
-				ipAddress = input;
-				System.out.println("IP address is now: " + ipAddress);
+		//don't ask for IP address if running in test mode
+		//the error simulator will ask for the IP address since it's sending packets to the server.
+		if (run != Mode.TEST) {
+			input = ""; // reset input
+			System.out.println("\nCurrent IP is: " + (ipAddress.equals("") ? "undefined" : ipAddress));
+			// option to set the IP address.
+			// User must input IP address at the first launch.
+			// Once an IP has been set, the user can enter nothing to keep it unchanged.
+			while (input.equals("")) {
+				System.out.println("Enter the IP address of server or nothing to keep IP address unchanged: ");
+				input = sc.nextLine();
+	
+				if (input.equals("")) {
+					if (ipAddress.equals(""))
+						System.out.println("An IP has not been entered yet!");
+					else
+						input = "entered"; // set input to arbitrary string to leave loop
+				} else {
+					ipAddress = input;
+					System.out.println("IP address is now: " + ipAddress);
+				}
+			}
+		} else { //set ipAdress to local ip address
+			try {
+				ipAddress = InetAddress.getLocalHost().getHostAddress();
+			} catch (UnknownHostException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
-
+			
 		input = "";
 		System.out.println(
 				"\nCurrent client directory is: " + (clientDirectory.equals("") ? "undefined" : clientDirectory));

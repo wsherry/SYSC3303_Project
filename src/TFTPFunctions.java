@@ -252,7 +252,7 @@ public class TFTPFunctions {
 					continue;
 				}
 
-				System.out.println(host + ": Data Packet received.");
+				//System.out.println(host + ": Data Packet received.");
 
 				// Check if it's a duplicate packet. If it is, we still want to send an ACK but
 				// not rewrite to the file.
@@ -421,7 +421,7 @@ public class TFTPFunctions {
 				verboseMode(sendPacket.getAddress(), sendPacket.getPort(), sendPacket.getLength(), msg);
 			}
 
-			System.out.println(host + ": Waiting for packet.");
+			//System.out.println(host + ": Waiting for packet.");
 
 			try {
 				// Block until a datagram is received via sendReceiveSocket.

@@ -22,6 +22,8 @@ public class TFTPSim extends TFTPFunctions {
 	private static Type packetType;
 	private int clientPort, serverPort = 69;
 	private InetAddress clientAddress;
+	private static InetAddress serverAddress = null;
+	static String ipAddress = "";
 
 	public static enum Type {
 		RRQ, WRQ, REQ, DATA, ACK
@@ -157,7 +159,7 @@ public class TFTPSim extends TFTPFunctions {
 			if (mode == Mode.DELAY && packetCount == packetNumber && receivedType == packetType) {
 				delayMode();
 			} else if (mode == Mode.DUPLICATE && packetCount == packetNumber && receivedType == packetType) {
-				duplicateMode(data, len, InetAddress.getLocalHost(), serverPort, "client", "server", packetCount, receivedType);
+				duplicateMode(data, len, serverAddress, serverPort, "client", "server", packetCount, receivedType);
 			} else if (mode == Mode.LOSS && packetCount == packetNumber && receivedType == packetType) {
 				lossMode(receiveSocket, receivedType, true);
 				receivedType = getType(data);
@@ -169,15 +171,10 @@ public class TFTPSim extends TFTPFunctions {
 			// on a specified host.
 			if ((mode == Mode.ERROR4 && packetCount == packetNumber && receivedType == packetType)
 					|| (mode == Mode.ERROR4 && (err4Mode == Err4Mode.FILENAME || err4Mode == Err4Mode.MODE))) {
-				sendPacket = error4Packet(data, serverPort, InetAddress.getLocalHost(), len);
+				sendPacket = error4Packet(data, serverPort, serverAddress, len);
 				mode = Mode.NORMAL;
 			} else {
-				try {
-					sendPacket = new DatagramPacket(data, len, InetAddress.getLocalHost(), serverPort);
-				} catch (UnknownHostException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
+				sendPacket = new DatagramPacket(data, len, serverAddress, serverPort);
 				// Test an 'unknown' TID
 				if (mode == Mode.ERROR5 && packetCount == packetNumber && receivedType == packetType) {
 					System.out.println("\nSimulator:  sending a packet with an 'unknown' TID from client to server.");
@@ -240,7 +237,7 @@ public class TFTPSim extends TFTPFunctions {
 
 			if (mode == Mode.ERROR4 && packetCount == packetNumber && receivedType == packetType
 					|| (mode == Mode.ERROR4 && (err4Mode == Err4Mode.FILENAME || err4Mode == Err4Mode.MODE))) {
-				sendPacket = error4Packet(data, serverPort, InetAddress.getLocalHost(), len);
+				sendPacket = error4Packet(data, serverPort, serverAddress, len);
 				mode = Mode.NORMAL;
 			} else {
 				// Construct a datagram packet that is to be sent to a specified port
@@ -262,7 +259,7 @@ public class TFTPSim extends TFTPFunctions {
 
 			sendPacketFromSocket(sendSocket, sendPacket);
 
-			if (checkIfLastDataPacket(data, receiveSocket, sendReceiveSocket, InetAddress.getLocalHost(), serverPort)) {
+			if (checkIfLastDataPacket(data, receiveSocket, sendReceiveSocket, serverAddress, serverPort)) {
 				System.out.println("Received all data packets");
 				configSim(); // Re-config SIM and continue to wait for packets.
 				continue; 
@@ -422,20 +419,59 @@ public class TFTPSim extends TFTPFunctions {
 			}
 		}
 
-		input = " ";
-		// option to toggle verbose or quiets mode
-		while (!(input.equals("1") || input.equals(""))) { // loops until valid input (1 or nothing)
-			System.out.println("\nEnter '1' to toggle between quiet and verbose mode ");
-			System.out.print("or nothing to stay in " + (verboseMode ? "verbose" : "quiet") + " mode: ");
-			input = sc.nextLine();
-			// toggling verboseMode
-			if (input.equals("1"))
-				verboseMode = verboseMode ? false : true;
+		boolean changeSettings = true;
+		if (serverAddress != null) { //not first time configuring
+			input = " ";
+			System.out.println("\nEnter 1 to change configurations or nothing to leave unchanged: ");
+			while (!(input.equals("1") || input.equals(""))) {
+				input = sc.nextLine();
+				if (input.equals("1")) changeSettings=true;
+				else changeSettings = false;
+			}
 		}
-		System.out.println("Running in " + (verboseMode ? "verbose" : "quiet") + " mode");
-
-		System.out.println("\n------------------------------------------------------\nConfigurations are now set up.");
-		System.out.println("------------------------------------------------------");
+		if (changeSettings) {
+			input = " ";
+			// option to toggle verbose or quiets mode
+			while (!(input.equals("1") || input.equals(""))) { // loops until valid input (1 or nothing)
+				System.out.println("\nEnter '1' to toggle between quiet and verbose mode ");
+				System.out.print("or nothing to stay in " + (verboseMode ? "verbose" : "quiet") + " mode: ");
+				input = sc.nextLine();
+				// toggling verboseMode
+				if (input.equals("1"))
+					verboseMode = verboseMode ? false : true;
+			}
+			System.out.println("Running in " + (verboseMode ? "verbose" : "quiet") + " mode");
+			
+			input = ""; // reset input
+			System.out.println("\nCurrent IP is: " + (ipAddress.equals("") ? "undefined" : ipAddress));
+			// option to set the IP address.
+			// User must input IP address at the first launch.
+			// Once an IP has been set, the user can enter nothing to keep it unchanged.
+			while (input.equals("")) {
+				System.out.println("Enter the IP address of server or nothing to keep IP address unchanged: ");
+				input = sc.nextLine();
+	
+				if (input.equals("")) {
+					if (ipAddress.equals(""))
+						System.out.println("An IP has not been entered yet!");
+					else
+						input = "entered"; // set input to arbitrary string to leave loop
+				} else {
+					ipAddress = input;
+					System.out.println("IP address is now: " + ipAddress);
+				}
+			}
+			//Set serverAddress
+			try {
+				serverAddress = InetAddress.getByName(ipAddress);
+			} catch (UnknownHostException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	
+			System.out.println("\n------------------------------------------------------\nConfigurations are now set up.");
+			System.out.println("------------------------------------------------------");
+		}
 	}
 
 	/**
