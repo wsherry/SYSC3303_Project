@@ -204,12 +204,16 @@ Iteration 3:
 and setting the directory of the client (i.e. "M:\SYSC3303_Project"). When prompted for the IP adress, paste the IP adress that was copied/noted from the server.
 ** run in the above order**
 
-Iteration 4: 
-1. Run server.java as java application and follow the command line prompts. This incluldes running in quiet or verbose mode and setting the directory of the server (i.e. "C:\\Users\\alanlin\\Desktop"). Copy/note the displayed address after configuration is complete.
-2. Run TFTPSim.java as java application. *Not necessary if only running in normal mode.
+Iteration 4:
+**ignore the .class files**
+1. In this directory, there's a folder called "Iteration4_Diagrams", which contains the associated diagrams for this program.
+and a zip file called "Team8_Project_IT4" which contains all the Java code. Unzip this file.
+2. After unzipping the "Team8_Project_IT4", in Eclipse, click "Open Project from file system" and select the directory with the unzipped files.
+3. Once all the files are loaded, first run server.java as java application and follow the command line prompts. This incluldes running in quiet or verbose mode and setting the directory of the server (i.e. "C:\\Users\\alanlin\\Desktop"). Copy/note the displayed address after configuration is complete.
+4. Run TFTPSim.java as java application. *Not necessary if only running in normal mode.
 	2.1 If running TFTPSim.java, follow the command line prompts. If you a mode that's not NORMAL mode, you will be prompted for more simulation configurations.
 		2.2 If simulating an error (not normal mode) the command line will prompt for which packet type, and number to perform the error simulation on.
 		2.2.1 If simulating erro code 4, a sub menu will be printed with options for error 4 cases.
-3. Run client.java as java application and follow the command line prompts. This incluldes running in normal or test mode, quiet or verbose mode, setting the IP address of the destination (server's IP)
+5. Run client.java as java application and follow the command line prompts. This incluldes running in normal or test mode, quiet or verbose mode, setting the IP address of the destination (server's IP)
 and setting the directory of the client (i.e. "M:\SYSC3303_Project"). When prompted for the IP adress, paste the IP adress that was copied/noted from the server.
 ** run in the above order**
