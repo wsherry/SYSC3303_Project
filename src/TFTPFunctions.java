@@ -33,7 +33,6 @@ public class TFTPFunctions {
 				byte[] temp = new byte[5]; //temp byte array for last data packet
 				temp[0] = 0;
 				temp[1] = 3;
-				byte[] blockNums = blockNumBytes(5);
 				temp[2] = 0;
 				temp[3] = 0;
 				temp[4] = 0;
@@ -258,7 +257,7 @@ public class TFTPFunctions {
 
 				// Check if it's a duplicate packet. If it is, we still want to send an ACK but
 				// not rewrite to the file.
-				if (!processedBlocks.contains(data[2] * 10 + data[3])) {
+				if (!processedBlocks.contains(data[2] * 256 + data[3])) {
 					// This block number has not been processed. Write it to the file.
 					try {
 						out.write(data, 4, len - 4);
@@ -293,7 +292,7 @@ public class TFTPFunctions {
 						}
 						e.printStackTrace();
 					}
-					processedBlocks.add(data[2] * 10 + data[3]);
+					processedBlocks.add(data[2] * 256 + data[3]);
 				} else {
 					if (verboseMode) {
 						System.out.println(
@@ -450,13 +449,13 @@ public class TFTPFunctions {
 
 			// Check if the received packet is a duplicate ACK. If it is, then we should not
 			// be re-sending the Nth data packet for the ACK. Sorcerer's Apprentice Bug.
-			if (!processedACKBlocks.contains(data[2] * 10 + data[3])) {
-				processedACKBlocks.add(data[2] * 10 + data[3]);
+			if (!processedACKBlocks.contains(data[2] * 256 + data[3])) {
+				processedACKBlocks.add(data[2] * 256 + data[3]);
 			} else {
 				if (verboseMode) {
 					System.out.println(host
 							+ ": Duplicate ACK data packet received. Ignoring it by not re-sending data block number ["
-							+ data[2] * 10 + data[3] + "] and waiting for the next datablock.");
+							+ data[2] * 256 + data[3] + "] and waiting for the next datablock.");
 				}
 			}
 

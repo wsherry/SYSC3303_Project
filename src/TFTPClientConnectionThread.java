@@ -89,7 +89,7 @@ public class TFTPClientConnectionThread extends TFTPFunctions implements Runnabl
 				System.out.println("Type 'quit' to shutdown.");
 				try {
 					System.out.println(
-							"Server (" + InetAddress.getLocalHost().getHostAddress() + ") : Waiting for packet.");
+						"Server (" + InetAddress.getLocalHost().getHostAddress() + ") : Waiting for packet.");
 				} catch (UnknownHostException e1) {
 					e1.printStackTrace();
 				}
