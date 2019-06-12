@@ -190,10 +190,6 @@ public class TFTPFunctions {
 						System.exit(1);
 					}
 				}
-				System.out.println("TRY");
-				System.out.println(receivePacket.getAddress());
-				System.out.println(receivePacket.getPort());
-
 				
 				if (!fileOpen) {
 					out = new BufferedOutputStream(new FileOutputStream(file));
@@ -229,8 +225,8 @@ public class TFTPFunctions {
 				len = receivePacket.getLength();
 				data = receivePacket.getData();
 
-				// Check for error 1 "Invalid file name".
-				if (data[1] == 5 && data[3] == 1) {
+				// Check for error 1 "Invalid file name" or error code 2
+				if (data[1] == 5 && data[3] == 1 || data[1] == 5 && data[3] == 2) {
 					System.out.println("\nERROR - " + new String(Arrays.copyOfRange(data, 4, data.length), "UTF-8") + "\n");
 					// TODO Move this to seperate finish()?
 					if (host.equals("Client")) {
@@ -346,12 +342,15 @@ public class TFTPFunctions {
 			}
 		}
 		catch (FileNotFoundException e2) {
-			System.out.println("Access Violation. Sending Error Packet 2.");
-			System.out.println("CATCH");
+			System.out.println(sendPort);
+			System.out.println("ERROR 2: Access Violation. Sending Error Packet 2.");
 			//Sending ERROR packet for Error code 2
 			byte[] err = new byte[] {0,5,0,2};
-			sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), sendPort);
+			sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(),receivePacket.getPort());
 			sendPacketFromSocket(socket, sendPacket);
+			if (verboseMode) {
+				verboseMode(receivePacket.getAddress(), receivePacket.getPort(), err.length,err);
+			}
 			if (host.equals("Client")) {
 				TFTPClient.finishedRequest = true;
 				TFTPClient.changeMode = true;
@@ -370,7 +369,6 @@ public class TFTPFunctions {
 		} else if (host.equals("Server")) {
 			TFTPClientConnectionThread.doneProcessingRequest = true;
 			TFTPClientConnectionThread.establishedCommunications.remove(receivePacket.getSocketAddress().toString());
-			System.out.println("FUNCTIONS:" + TFTPClientConnectionThread.doneProcessingRequest);
 		}
 	}
 
