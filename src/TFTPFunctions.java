@@ -226,7 +226,7 @@ public class TFTPFunctions {
 				data = receivePacket.getData();
 
 				// Check for error 1 "Invalid file name" or error code 2
-				if (data[1] == 5 && data[3] == 1 || data[1] == 5 && data[3] == 2) {
+				if (data[1] == 5 && (data[3] == 1 || data[3] == 2)) {
 					System.out.println("\nERROR - " + new String(Arrays.copyOfRange(data, 4, data.length), "UTF-8") + "\n");
 					// TODO Move this to seperate finish()?
 					if (host.equals("Client")) {
@@ -511,6 +511,10 @@ public class TFTPFunctions {
 				}
 				if(receivePacket.getData()[3] == 2) {
 					System.out.println("ERROR code 2: Access Denied.");
+					if (host == "Client") {
+						TFTPClient.finishedRequest = true;
+						TFTPClient.changeMode = true;
+					}
 					break;
 				}
 			}
