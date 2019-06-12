@@ -30,12 +30,11 @@ public class TFTPFunctions {
 			//Checks if the last block is is 516 bytes (512 data bytes)
 			//If so, the file is a multiple of 512 data bytes and needs a empty dat packet at the end
 			if (msgList.get(msgList.size()-1).length == 516) {
-				byte[] temp = new byte[5]; //temp byte array for last data packet
+				byte[] temp = new byte[4]; //temp byte array for last data packet
 				temp[0] = 0;
 				temp[1] = 3;
 				temp[2] = 0;
 				temp[3] = 0;
-				temp[4] = 0;
 				msgList.add(temp);
 			}
 			bis.close();
