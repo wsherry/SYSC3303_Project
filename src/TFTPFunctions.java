@@ -27,6 +27,7 @@ public class TFTPFunctions {
 				System.arraycopy(dataBuffer, 0, msg, 4, bytesRead);
 				msgList.add(msg);
 			}
+			
 			//Checks if the last block is is 516 bytes (512 data bytes)
 			//If so, the file is a multiple of 512 data bytes and needs a empty dat packet at the end
 			if (msgList.get(msgList.size()-1).length == 516) {

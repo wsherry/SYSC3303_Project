@@ -79,8 +79,10 @@ public class TFTPSim extends TFTPFunctions {
 			verboseMode(sendPacket.getAddress(), sendPacket.getPort(), len, data);
 		}
 
+		if (src.equals("server")) sendPacketFromSocket(sendSocket, sendPacket);
+		else sendPacketFromSocket(sendReceiveSocket, sendPacket);
 		// Send the duplicate datagram packet to the server via the send/receive socket.
-		sendPacketFromSocket(sendReceiveSocket, sendPacket);
+		
 	}
 	
 	public void lossMode(DatagramSocket socket, Type receivedType, boolean isClient) {
@@ -129,7 +131,7 @@ public class TFTPSim extends TFTPFunctions {
 		//int clientPort, serverPort = 69,
 		int j = 0, len, packetCount = 0;
 		//InetAddress clientAdress;
-
+int k=0;
 		for (;;) { // loop forever
 
 			data = new byte[516];
@@ -140,14 +142,18 @@ public class TFTPSim extends TFTPFunctions {
 
 			// Process the received datagram.
 			len = receivePacket.getLength();
+			if(k==0)
 			clientPort = receivePacket.getPort();
+			
 			if (verboseMode) {
 				System.out.println("Simulator: Packet received:");
 				verboseMode(receivePacket.getAddress(), clientPort, len, data);
 			}
 
+			if (k==0)
 			clientAddress = receivePacket.getAddress();
 
+			
 			// Save the type of the received packet
 			Type receivedType = getType(data);
 
@@ -197,7 +203,7 @@ public class TFTPSim extends TFTPFunctions {
 			// Send the datagram packet to the server via the send/receive socket.
 			sendPacketFromSocket(sendReceiveSocket, sendPacket);
 
-			if (checkIfLastDataPacket(data, sendReceiveSocket, sendSocket, clientAddress, clientPort)) {
+			if (checkIfLastDataPacket(data, len, sendReceiveSocket, sendSocket, clientAddress, clientPort, true)) {
 				System.out.println("Received all data packets");
 				serverPort = 69;
 				packetCount=0;
@@ -266,7 +272,7 @@ public class TFTPSim extends TFTPFunctions {
 
 			sendPacketFromSocket(sendSocket, sendPacket);
 
-			if (checkIfLastDataPacket(data, receiveSocket, sendReceiveSocket, serverAddress, serverPort)) {
+			if (checkIfLastDataPacket(data, len, receiveSocket, sendReceiveSocket, serverAddress, serverPort,false)) {
 				System.out.println("Received all data packets");
 				packetCount=0;
 				configSim(); // Re-config SIM and continue to wait for packets.
@@ -291,22 +297,31 @@ public class TFTPSim extends TFTPFunctions {
 	 * @param portToSendTo - the port to send the last ACK to.
 	 * @return boolean - true if it WAS the last data packet and false otherwise.
 	 */
-	private boolean checkIfLastDataPacket(byte[] data, DatagramSocket receiveSocket, DatagramSocket sendSocket, InetAddress addressToSendTo, int portToSendTo) {
+	private boolean checkIfLastDataPacket(byte[] data, int len, DatagramSocket receiveSocket, DatagramSocket sendSocket, InetAddress addressToSendTo, int portToSendTo, boolean isClient) {
 		if (data[1] == 3 && sendPacket.getLength() < 516) {
+			try {
+				Thread.sleep(15);
+			} catch (InterruptedException e) {
+				
+			} 
 			// Wait to receive the last ACK.
 			data = new byte[516];
-			receivePacket = new DatagramPacket(data, data.length);
+			receivePacket = new DatagramPacket(data, len);
 			receivePacketFromSocket(receiveSocket, receivePacket);
 			System.out.println("Simulator: packet received.");			
 			if (verboseMode) {
-				verboseMode(receivePacket.getAddress(), receivePacket.getPort(), data.length, data);
+				verboseMode(receivePacket.getAddress(), receivePacket.getPort(), len, data);
 			}
 			// Forward the last ACK.
-			sendPacket = new DatagramPacket(data, receivePacket.getLength(), addressToSendTo, portToSendTo);
-			sendPacketFromSocket(sendSocket, sendPacket);
+			sendPacket = new DatagramPacket(data, len, addressToSendTo, portToSendTo);
+			
+			//if (isClient) 
+				sendPacketFromSocket(sendSocket, sendPacket);
+			//else sendPacketFromSocket(sendReceiveSocket, sendPacket);
+			
 			System.out.println("Simulator: packet sent.");
 			if (verboseMode) {
-				verboseMode(addressToSendTo, portToSendTo, data.length, data);
+				verboseMode(addressToSendTo, portToSendTo, len, data);
 			}
  			
 			return true;
