@@ -167,6 +167,13 @@ public class TFTPSim extends TFTPFunctions {
 					packetCount++;
 			}
 
+		
+			try {
+					Thread.sleep(15);
+			} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+			}
 			// Construct a datagram packet that is to be sent to a specified port
 			// on a specified host.
 			if ((mode == Mode.ERROR4 && packetCount == packetNumber && receivedType == packetType)
@@ -194,6 +201,7 @@ public class TFTPSim extends TFTPFunctions {
 			if (checkIfLastDataPacket(data, sendReceiveSocket, sendSocket, clientAddress, clientPort)) {
 				System.out.println("Received all data packets");
 				serverPort = 69;
+				packetCount=0;
 				configSim();
 				continue;
 			}
@@ -235,6 +243,7 @@ public class TFTPSim extends TFTPFunctions {
 					packetCount++;
 			}
 
+			
 			if (mode == Mode.ERROR4 && packetCount == packetNumber && receivedType == packetType
 					|| (mode == Mode.ERROR4 && (err4Mode == Err4Mode.FILENAME || err4Mode == Err4Mode.MODE))) {
 				sendPacket = error4Packet(data, serverPort, serverAddress, len);
@@ -261,6 +270,7 @@ public class TFTPSim extends TFTPFunctions {
 
 			if (checkIfLastDataPacket(data, receiveSocket, sendReceiveSocket, serverAddress, serverPort)) {
 				System.out.println("Received all data packets");
+				packetCount=0;
 				configSim(); // Re-config SIM and continue to wait for packets.
 				continue; 
 			}
@@ -399,8 +409,6 @@ public class TFTPSim extends TFTPFunctions {
 					}
 				}
 			}
-
-			System.out.println(packetType + " number " + packetNumber + " will be delayed");
 
 			if (mode == Mode.DELAY) {
 				invalid = true; // used to break while loop when the entered input is a valid number

@@ -74,6 +74,7 @@ public class TFTPClient extends TFTPFunctions {
 			// THIS SHOULD ONLY PROMPT USER AFTER A REQUEST HAS FULLY COMPLETED
 			// User chooses read or write request
 			if (changeMode) {
+				input = "";
 				while (!(input.equals("1") || input.equals("2") || input.equals("3"))) {
 					System.out.println("\nEnter '1' for read or '2' write request or '3' to quit: ");
 					input = sc.nextLine();
