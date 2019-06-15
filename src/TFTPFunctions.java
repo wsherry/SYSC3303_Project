@@ -223,6 +223,28 @@ public class TFTPFunctions {
 				len = receivePacket.getLength();
 				data = receivePacket.getData();
 
+				// Check for error 4 "Invalid TFTP Operation" or error code 4
+				if (data[1] == 5 && (data[3] == 4)) {
+					System.out.println("\nERROR - " + new String(Arrays.copyOfRange(data, 4, data.length), "UTF-8") + "\n");
+					if (host.equals("Client")) {
+						TFTPClient.finishedRequest = true;
+						TFTPClient.changeMode = true;
+					} else if (host.equals("Server")) {
+						TFTPClientConnectionThread.doneProcessingRequest = true;
+						TFTPClientConnectionThread.establishedCommunications
+								.remove(receivePacket.getSocketAddress().toString());
+					}
+					try {
+						out.close();
+					} catch (IOException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+					// Delete the file that has been created at the beginning of the method.
+					new File(fileName).delete(); 
+					break;
+				}
+				
 				// Check for error 1 "Invalid file name" or error code 2
 				if (data[1] == 5 && (data[3] == 1 || data[3] == 2)) {
 					System.out.println("\nERROR - " + new String(Arrays.copyOfRange(data, 4, data.length), "UTF-8") + "\n");
@@ -481,40 +503,45 @@ public class TFTPFunctions {
 				i--;
 				continue;
 			}
-
-			// Check for error 1 "Invalid file name".
-			if (data[1] == 5 && data[3] == 1) {
-				try {
-					System.out.println("\nERROR - " + new String(Arrays.copyOfRange(data, 4, data.length), "UTF-8") + "\n");
-				} catch (UnsupportedEncodingException e) {
-					e.printStackTrace();
-				}
+			
+			// Check for error 4 "Invalid TFTP Operation".
+			if (!isValidOperation(data)) {
+				System.out.println("Received an invalid TFTP operation. Responding with ERROR code 4 and continuing.");
+				byte[] err = new byte[] { 0, 5, 0, 4 };
+				sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), receivePacket.getPort());
+				sendPacketFromSocket(socket, sendPacket);			
+				i--;
 				continue;
 			}
 			
 			// Check if packet received is an ERROR Packet
 			if (receivePacket.getData()[1] == 5) {
-				if(receivePacket.getData()[3] == 3) {
-					System.out.println("ERROR code 3: no space on disk or in allocation. Terminating transfer");
-					if (host == "Client") {
-						TFTPClient.finishedRequest = true;
-						TFTPClient.changeMode = true;
+				// Check for error 1 "Invalid file name".
+				if (data[1] == 5 && data[3] == 1) {
+					try {
+						System.out.println("\nERROR - " + new String(Arrays.copyOfRange(data, 4, data.length), "UTF-8") + "\n");
+					} catch (UnsupportedEncodingException e) {
+						e.printStackTrace();
 					}
-					break;
+					continue;
+				}
+				if(receivePacket.getData()[3] == 2) {
+					System.out.println("ERROR code 2: Access Denied.");
+				}
+				if(receivePacket.getData()[3] == 3) {
+					System.out.println("ERROR code 3: no space on disk or in allocation. Terminating transfer.");
+				}
+				if (receivePacket.getData()[3] == 4) {
+					System.out.println("ERROR code 4: Invalid TFTP operation. Terminating transfer.");
 				}
 				if (receivePacket.getData()[3] == 5) {
 					System.out.println("ERROR code 5: DATA Packet sent to wrong port. Resending last DATA packet.");
 					i--;
 					continue;
 				}
-				if(receivePacket.getData()[3] == 2) {
-					System.out.println("ERROR code 2: Access Denied.");
-					if (host == "Client") {
-						TFTPClient.finishedRequest = true;
-						TFTPClient.changeMode = true;
-					}
-					break;
-				}
+				TFTPClient.finishedRequest = true;
+				TFTPClient.changeMode = true;
+				break;
 			}
 
 			int len = receivePacket.getLength();
@@ -538,6 +565,13 @@ public class TFTPFunctions {
 			TFTPClientConnectionThread.doneProcessingRequest = true;
 			TFTPClientConnectionThread.establishedCommunications.remove(receivePacket.getSocketAddress().toString());
 		}
+	}
+	
+	private boolean isValidOperation(byte[] data) {
+		if (data[0] != 0 || data[1] != 3 && data[1] != 4) {
+			return false;
+		}
+		return true;
 	}
 
 }
