@@ -116,7 +116,12 @@ public class TFTPClientConnectionThread extends TFTPFunctions implements Runnabl
 				// Form a String from the byte array.
 				String received = new String(data, 0, len);
 				fileName = received.split("\0")[1].substring(1);
-				System.out.println(fileName);
+				String mode = received.split("\0")[3].substring(0);
+				if (fileName.isEmpty() || !mode.equals("octet")) { // Blank filename or invalid mode
+					request = Request.ERROR;
+				} else {
+					System.out.println(fileName);
+				}
 
 				if (data[0] != 0)
 					request = Request.ERROR; // bad
@@ -131,12 +136,18 @@ public class TFTPClientConnectionThread extends TFTPFunctions implements Runnabl
 				checkRequestForError(len, data);
 
 				if (request == Request.ERROR) { // it was invalid, close socket on port 69 (so things work next time)
-					receiveSocket.close();
+					System.out.println("Received an invalid TFTP operation. Responding with ERROR code 4 and continuing.");
+					byte[] err = new byte[] { 0, 5, 0, 4 };
+					DatagramPacket sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), receivePacket.getPort());
 					try {
-						throw new Exception("Not yet implemented");
-					} catch (Exception e) {
-						e.printStackTrace();
+						DatagramSocket sendSocket = new DatagramSocket();
+						sendPacketFromSocket(sendSocket, sendPacket);		
+					} catch (SocketException se) {
+						se.printStackTrace();
+						receiveSocket.close();
+						System.exit(0);
 					}
+					receiveSocket.close();
 				}
 
 				establishedCommunications.add(receivePacket.getSocketAddress().toString());

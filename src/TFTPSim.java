@@ -167,12 +167,11 @@ public class TFTPSim extends TFTPFunctions {
 					packetCount++;
 			}
 
-		
 			try {
-					Thread.sleep(15);
+				Thread.sleep(15);
 			} catch (InterruptedException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 			// Construct a datagram packet that is to be sent to a specified port
 			// on a specified host.
@@ -243,7 +242,6 @@ public class TFTPSim extends TFTPFunctions {
 					packetCount++;
 			}
 
-			
 			if (mode == Mode.ERROR4 && packetCount == packetNumber && receivedType == packetType
 					|| (mode == Mode.ERROR4 && (err4Mode == Err4Mode.FILENAME || err4Mode == Err4Mode.MODE))) {
 				sendPacket = error4Packet(data, serverPort, serverAddress, len);

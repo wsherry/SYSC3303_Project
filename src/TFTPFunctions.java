@@ -142,6 +142,7 @@ public class TFTPFunctions {
 		//print message for overwriting existing file
 		if (file.exists()) System.out.println("\n-----------WARNING, ERROR CODE 6. File Already Exists. Overwriting file...----------");
 		ArrayList<Integer> processedBlocks = new ArrayList<>();
+		int expectedBlockNumber = 1;
 		if (testMode)
 			sendPort = 23;
 		try {
@@ -276,6 +277,15 @@ public class TFTPFunctions {
 
 				//System.out.println(host + ": Data Packet received.");
 
+				// Check if the next data block is next in sequence.
+				if ((data[2] * 256 + data[3]) > expectedBlockNumber) {
+					// Create an error packet 4 and terminate connection.
+					System.out.println("Received an invalid data packet block number sending error packet and stoping.");
+					byte[] err = new byte[] { 0, 5, 0, 4 };
+					sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), receivePacket.getPort());
+					sendPacketFromSocket(socket, sendPacket);			
+					break;
+				}
 				// Check if it's a duplicate packet. If it is, we still want to send an ACK but
 				// not rewrite to the file.
 				if (!processedBlocks.contains(data[2] * 256 + data[3])) {
@@ -314,6 +324,7 @@ public class TFTPFunctions {
 						e.printStackTrace();
 					}
 					processedBlocks.add(data[2] * 256 + data[3]);
+					expectedBlockNumber++;
 				} else {
 					if (verboseMode) {
 						System.out.println(
@@ -506,12 +517,12 @@ public class TFTPFunctions {
 			
 			// Check for error 4 "Invalid TFTP Operation".
 			if (!isValidOperation(data)) {
-				System.out.println("Received an invalid TFTP operation. Responding with ERROR code 4 and continuing.");
+				System.out.println("Received an invalid TFTP operation. Responding with ERROR code 4 and stoping.");
 				byte[] err = new byte[] { 0, 5, 0, 4 };
 				sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), receivePacket.getPort());
 				sendPacketFromSocket(socket, sendPacket);			
 				i--;
-				continue;
+				break;
 			}
 			
 			// Check if packet received is an ERROR Packet

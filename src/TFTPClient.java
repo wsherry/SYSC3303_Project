@@ -1,5 +1,3 @@
-//package Iteration1;
-
 // TFTPClient.java
 // This class is the client side for a very simple assignment based on TFTP on
 // UDP/IP. The client uses one port and sends a read or write request and gets 
@@ -16,7 +14,7 @@ public class TFTPClient extends TFTPFunctions {
 	static int connectionPort;
 	private static boolean verboseMode = false; // false for quiet and true for verbose
 	static String ipAddress = "192.168.0.21";
-	private static String clientDirectory = "C:\\Users\\Sherry Wang\\Documents\\GitHub\\SYSC3303_Project\\src";
+	private static String clientDirectory = "C:\\Alexei's Stuff\\Carleton University";
 	static boolean finishedRequest = false;
 	static boolean changeMode = true;
 	private boolean running = true;
