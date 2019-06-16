@@ -304,7 +304,11 @@ public class TFTPFunctions {
 					// Create an error packet 4 and terminate connection.
 					System.out.println("Received an invalid data packet block number sending error packet and stoping.");
 					byte[] err = new byte[] { 0, 5, 0, 4 };
-					sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), receivePacket.getPort());
+					if (host.equals("Client")) {
+						sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), sendPort);
+					} else {
+						sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), receivePacket.getPort());
+					}
 					sendPacketFromSocket(socket, sendPacket);			
 					break;
 				}
@@ -544,6 +548,16 @@ public class TFTPFunctions {
 				sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), receivePacket.getPort());
 				sendPacketFromSocket(socket, sendPacket);			
 				i--;
+				break;
+			}
+			
+			if ((data[2] * 256 + data[3]) > blockNum) {
+				// Create an error packet 4 and terminate connection.
+				System.out.println("Received an invalid data packet block number sending error packet and stoping.");
+				byte[] err = new byte[] { 0, 5, 0, 4 };
+				sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), receivePacket.getPort());
+				sendPacketFromSocket(socket, sendPacket);		
+				i++;
 				break;
 			}
 			
