@@ -109,7 +109,7 @@ public class TFTPSim extends TFTPFunctions {
 			verboseMode(receivePacket.getAddress(), receivePacket.getPort(), len, data);
 		}
 
-		clientAddress = receivePacket.getAddress();
+		//clientAddress = receivePacket.getAddress();
 	}
 	
 	public Type getType(byte[] data) {
@@ -250,7 +250,7 @@ int k=0;
 
 			if (mode == Mode.ERROR4 && packetCount == packetNumber && receivedType == packetType
 					|| (mode == Mode.ERROR4 && (err4Mode == Err4Mode.FILENAME || err4Mode == Err4Mode.MODE))) {
-				sendPacket = error4Packet(data, serverPort, serverAddress, len);
+				sendPacket = error4Packet(data, clientPort, clientAddress, len);
 				mode = Mode.NORMAL;
 			} else {
 				// Construct a datagram packet that is to be sent to a specified port

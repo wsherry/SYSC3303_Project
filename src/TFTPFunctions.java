@@ -211,6 +211,19 @@ public class TFTPFunctions {
 						continue;
 					}
 				}
+				//check if valid packet if not send error code 4
+				if (!isValidOperation(data)) {
+					System.out.println("Received an invalid TFTP operation. Responding with ERROR code 4 and stoping.");
+					byte[] err = new byte[] { 0, 5, 0, 4 };
+					if (host.equals("Client")) {
+						sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), sendPort);
+					} else {
+						sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), receivePacket.getPort());
+					}
+					//sendPacket = new DatagramPacket(err, err.length, receivePacket.getAddress(), receivePacket.getPort());
+					sendPacketFromSocket(socket, sendPacket);			
+					break;
+				}
 
 				// Check if packet came from correct source. Send back ERROR packet code 5 if
 				// not.
