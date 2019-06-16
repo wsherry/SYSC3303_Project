@@ -156,10 +156,18 @@ public class TFTPFunctions {
 				receivePacket = new DatagramPacket(data, data.length);
 				int len = receivePacket.getLength();
 				System.out.println(host + ": Waiting for data packet.");
+//				try {
+//					Thread.sleep(5);
+//				} catch (Exception e) {
+//				}
+				//System.out.println(requestResponse);
 				if (requestResponse) {
 					try {
 						// Block until a datagram is received via sendReceiveSocket.
+						socket.setSoTimeout(300000);
 						socket.receive(receivePacket);
+						socket.setSoTimeout(TIMEOUT);
+
 						if (!testMode)
 							sendPort = receivePacket.getPort();
 						requestResponse = false;
