@@ -184,6 +184,7 @@ public class TFTPClientConnectionThread extends TFTPFunctions implements Runnabl
 		public void run() {
 			// Create a response.
 			if (request == Request.READ) {
+				processedACKBlocks = new ArrayList<>();
 				transferFiles(sendReceiveSocket, receivePacket, "Server", serverDirectory + "\\" + fileName,
 						receivePacket.getPort(), processedACKBlocks, verboseMode);
 			} else if (request == Request.WRITE) {
