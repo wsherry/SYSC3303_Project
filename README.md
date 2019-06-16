@@ -176,7 +176,7 @@ TFTPSim.java
 The simulator receives a read or write packet from a client and passes it on to the server.  Upon receiving a response, it passes it on to the client.
 
 
-Installation/setup instructions:
+Installation/running instructions:
 
 Iteration 1: 
 
@@ -191,7 +191,7 @@ Installation/setup instructions:
 1. Run server.java as java application and follow the command line prompts. Copy/note the displayed address after configuration is complete.
 2. Run TFTPSim.java as java application. *Not necessary if only running in normal mode.
 	2.1 If running TFTPSim.java, follow the command line prompts. If you a mode that's not NORMAL mode, you will be prompted for more simulation configurations.
-3. Run client.java as java application and follow the command line prompts. When prompted for the IP adress, paste the IP adress that was copied/noted from the server.
+3. Run client.java as java application and follow the command line prompts. When prompted for the IP address, paste the IP address that was copied/noted from the server.
 ** run in the above order**
 
 Iteration 3:
@@ -201,7 +201,7 @@ Iteration 3:
 		2.2 If simulating an error (not normal mode) the command line will prompt for which packet type, and number to perform the error simulation on.
 		2.2.1 If simulating erro code 4, a sub menu will be printed with options for error 4 cases.
 3. Run client.java as java application and follow the command line prompts. This incluldes running in normal or test mode, quiet or verbose mode, setting the IP address of the destination (server's IP)
-and setting the directory of the client (i.e. "M:\SYSC3303_Project"). When prompted for the IP adress, paste the IP adress that was copied/noted from the server.
+and setting the directory of the client (i.e. "M:\SYSC3303_Project"). When prompted for the IP address, paste the IP address that was copied/noted from the server.
 ** run in the above order**
 
 Iteration 4:
@@ -209,11 +209,25 @@ Iteration 4:
 1. In this directory, there's a folder called "Iteration4_Diagrams", which contains the associated diagrams for this program.
 and a zip file called "Team8_Project_IT4" which contains all the Java code. Unzip this file.
 2. After unzipping the "Team8_Project_IT4", in Eclipse, click "Open Project from file system" and select the directory with the unzipped files.
-3. Once all the files are loaded, first run server.java as java application and follow the command line prompts. This incluldes running in quiet or verbose mode and setting the directory of the server (i.e. "C:\\Users\\alanlin\\Desktop"). Copy/note the displayed address after configuration is complete.
-4. Run TFTPSim.java as java application. *Not necessary if only running in normal mode.
-	2.1 If running TFTPSim.java, follow the command line prompts. If you a mode that's not NORMAL mode, you will be prompted for more simulation configurations.
-		2.2 If simulating an error (not normal mode) the command line will prompt for which packet type, and number to perform the error simulation on.
-		2.2.1 If simulating erro code 4, a sub menu will be printed with options for error 4 cases.
-5. Run client.java as java application and follow the command line prompts. This incluldes running in normal or test mode, quiet or verbose mode, setting the IP address of the destination (server's IP)
-and setting the directory of the client (i.e. "M:\SYSC3303_Project"). When prompted for the IP adress, paste the IP adress that was copied/noted from the server.
+3. Once all the files are loaded, first run server.java as java application and follow the command line prompts. These prompts are explained in 3.1.x.
+	3.1.1 Option to run in quiet or verbose mode. Verbose mode will print out the packets that are being recieved and sent, quiet does not.
+	3.1.2 Option setting the IP address of the destination (server's IP address). If running with error sim, you will not be prompted for this.This incluldes running in quiet or verbose mode and setting the directory of the server (i.e. "C:\\Users\\alanlin\\Desktop"). Copy/note the displayed address after configuration is complete.
+4. If running in test mode only, run TFTPSim.java as java application. Otherwise, this is not necessary if only running in normal mode.
+	4.1 If running TFTPSim.java, follow the command line prompts. If running in a mode that's not NORMAL mode, you will be prompted for more simulation configurations.
+		4.2 If simulating an error (not normal mode) the command line will prompt for which packet type and number to perform the error simulation on. The modes are explained in 4.2.x.
+			4.2.1 LOSS packet mode: the error sim will not forward the specified packet to the recipient.
+			4.2.2 DELAYED packet mode: the error sim will delay the specified packet that's being sent to the recipient.
+			4.2.3 DUPLICATE packet mode: the error sim will forward the specified packet twice.
+			4.2.4 ILLEGAL TFTP OPERATION mode: the error sim will create packets that will generate an error code 4 (modes listed in 4.2.4.x) in either client or server.
+				4.2.4.1 Error in OPCODE: the error sim will change the opcode of the specified packet to "99".
+				4.2.4.2 Error in BLOCK NUMBER: the error sim will add 3 to the block number of the specified packet.
+				4.2.4.3 Error in FILE NAME: the error sim will remove the name from the specified packet (request packet).
+				4.2.4.4 Error in MODE: the error sim will change the mode to "pctect" (valid is "octect") of the specified packet.
+			4.2.5 UNKOWN TRANSFER ID: the error sim will send the specified packet from another socket (different from the socket for estiablishing connection).
+		4.3.1 If simulating error code 4, a sub menu will be printed with options for error 4 cases.
+5. Run client.java as java application and follow the command line prompts. These prompts are explained in 5.1.x.
+	5.1.1 Option to run in normal or test mode. Normal mode is only for running without the error sim.
+	5.1.2 Option to run in quiet or verbose mode. Verbose mode will print out the packets that are being recieved and sent, quiet does not.
+	5.1.3 Option setting the IP address of the destination (server's IP address). If running with error sim, you will not be prompted for this.
+	5.1.4 Setting the directory of the client (i.e. "M:\SYSC3303_Project").
 ** run in the above order**
