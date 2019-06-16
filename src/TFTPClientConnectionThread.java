@@ -116,7 +116,7 @@ public class TFTPClientConnectionThread extends TFTPFunctions implements Runnabl
 				// Form a String from the byte array.
 				String received = new String(data, 0, len);
 				fileName = received.split("\0")[1].substring(1);
-				String mode = received.split("\0")[3].substring(0);
+				String mode = received.split("\0")[2].substring(0);
 				if (fileName.isEmpty() || !mode.equals("octet")) { // Blank filename or invalid mode
 					request = Request.ERROR;
 				} else {

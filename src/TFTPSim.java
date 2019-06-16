@@ -363,6 +363,7 @@ int k=0;
 		System.out.println("Running in " + mode + " mode");
 
 		if (mode == Mode.ERROR4) { // sub menu for error 4 options
+			input = "";
 			while (!(input.equals("0") || input.equals("1") || input.equals("2") || input.equals("3"))) {
 				System.out.print(
 						"\nEnter:\n0 for error in opcode\n1 for error in block number\n2 for invalid file name (too large or missing)");
@@ -402,12 +403,13 @@ int k=0;
 			}
 
 			boolean invalid = true; // used to break while loop when the entered input is a valid number
-
+			input = "";
+			
 			// User inputs to specify which packet number to lose/delay/duplicate
 			while (invalid) {
-				// If the request is to duplicate a read or write request then, according to our
+				// If the request is to test a read or write request then, according to our
 				// logic, it can only be the 1st packet.
-				if ((packetType == Type.RRQ || packetType == Type.WRQ) && mode == Mode.DUPLICATE) {
+				if ((packetType == Type.RRQ || packetType == Type.WRQ)) {
 					packetNumber = 1;
 					invalid = false;
 				} else {
@@ -422,8 +424,11 @@ int k=0;
 					}
 				}
 			}
+			System.out.println(mode + " error simulation wil be performed on " + packetType + " packet " + packetNumber);
+			
 
 			if (mode == Mode.DELAY) {
+				input = "";
 				invalid = true; // used to break while loop when the entered input is a valid number
 				while (invalid) {
 					System.out.println("\nEnter the amount of time to delay packet (seconds): ");
