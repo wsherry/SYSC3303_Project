@@ -146,6 +146,7 @@ public class TFTPFunctions {
 		int expectedBlockNumber = 1;
 		if (testMode)
 			sendPort = 23;
+		boolean isRequest = requestResponse;
 		try {
 			socket.setSoTimeout(TIMEOUT);
 //			BufferedOutputStream out = new BufferedOutputStream(new FileOutputStream(file));
@@ -156,13 +157,15 @@ public class TFTPFunctions {
 				receivePacket = new DatagramPacket(data, data.length);
 				int len = receivePacket.getLength();
 				System.out.println(host + ": Waiting for data packet.");
-				if (requestResponse) {
+				System.out.println(isRequest);
+				System.out.println(socket.getLocalPort());
+				if (isRequest) {
 					try {
 						// Block until a datagram is received via sendReceiveSocket.
 						socket.receive(receivePacket);
 						if (!testMode)
 							sendPort = receivePacket.getPort();
-						requestResponse = false;
+						isRequest = false;
 						connectionPort = receivePacket.getPort();
 					} catch (InterruptedIOException io) {
 						System.out.println(host + " timed out. resending request.");
@@ -189,8 +192,7 @@ public class TFTPFunctions {
 						e.printStackTrace();
 						System.exit(1);
 					}
-				}
-				
+				}				
 				if (!fileOpen) {
 					out = new BufferedOutputStream(new FileOutputStream(file));
 					fileOpen = true;
