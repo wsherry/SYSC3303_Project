@@ -284,3 +284,4 @@ Iteration 5 Instructions:
 	5.1.4 Setting the directory of the client (i.e. "M:\SYSC3303_Project"). ** run in the above order**
 
 
+KEY NOTE: From Iteration 1-4 we had encapsulated the code to be able to handle a scenario where the client and the server can reside on different computers.
