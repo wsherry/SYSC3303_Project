@@ -8,6 +8,17 @@
 
 import java.util.Scanner;
 
+/**
+ * The server is a java program that consists of multiple Java threads. The server must be capable
+ * of supporting multiple concurrent read and write connections with different clients. The server will
+ * use a multithreaded architecture, where one thread will wait on port 69 for UDP datagrams. This thread
+ * that should:
+ * 1) Create another thread, and pass it the TFTP packet to deal with
+ * 2) Go back to waiting on port 69 for another request
+ * 
+ * @author
+ *
+ */
 public class TFTPServer {
 	// UDP datagram packets and sockets used to send / receive
 	private static boolean verboseMode = false; // false for quiet and true for verbose
@@ -24,6 +35,8 @@ public class TFTPServer {
 	 * Launches the thread for receiving data and continuously runs the server's
 	 * GUI.
 	 * 
+	 * @param args
+	 * @throws Exception
 	 */
 	public void receiveAndSendTFTP() {
 		Scanner sc = new Scanner(System.in);
@@ -58,7 +71,12 @@ public class TFTPServer {
 	}
 
 	/**
-	 * "Menu" for configuring the settings of client application
+	 * "Menu" for configuring the settings of client application. Client is able
+	 * to determine what modes to toggle between verboseMode and quietMode as
+	 * well as enter the correct server directory to begin file transfer.
+	 * 
+	 * @param args
+	 * @throws Exception
 	 */
 	public static void configServer() {
 		Scanner sc = new Scanner(System.in); // scanner for getting user's input
@@ -98,7 +116,15 @@ public class TFTPServer {
 		}
 		System.out.println("\n------------------------------------------------------\nConfigurations are now set up.");
 	}
-
+	
+	/**
+	 * Creates a new TFTPServer instance, runs configures the server instance,
+	 * and launches the thread for receiving data and continuously runs the server's
+	 * GUI.
+	 * 
+	 * @param args
+	 * @throws Exception
+	 */
 	public static void main(String args[]) throws Exception {
 		TFTPServer s = new TFTPServer();
 		System.out.println("Welcome to the TFTP server application");
