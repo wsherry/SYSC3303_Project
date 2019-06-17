@@ -46,6 +46,9 @@ public class TFTPClient extends TFTPFunctions {
 		}
 	}
 
+	/**
+	 * Send and receive packets
+	 */
 	public void sendAndReceive() {
 		Scanner sc = new Scanner(System.in);
 		// user toggle verbose or quiets mode

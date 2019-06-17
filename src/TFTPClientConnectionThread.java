@@ -1,10 +1,6 @@
-//package Iteration1;
-
 import java.io.*;
 import java.net.*;
 import java.util.*;
-
-//import TFTPClient.RequestType;
 
 public class TFTPClientConnectionThread extends TFTPFunctions implements Runnable {
 
@@ -49,6 +45,11 @@ public class TFTPClientConnectionThread extends TFTPFunctions implements Runnabl
 		receiveSocket.close();
 	}
 
+	/**
+	 * Checks request packet for errors
+	 * @param len the length of the data
+	 * @param data the bytes of the packet
+	 */
 	public void checkRequestForError(int len, byte[] data) {
 		int j = 0, k = 0;
 		if (request != Request.ERROR) { // check for filename
@@ -186,16 +187,20 @@ public class TFTPClientConnectionThread extends TFTPFunctions implements Runnabl
 			if (request == Request.READ) {
 				processedACKBlocks = new ArrayList<>();
 				transferFiles(sendReceiveSocket, receivePacket, "Server", serverDirectory + "\\" + fileName,
-						receivePacket.getPort(), processedACKBlocks, verboseMode);
+						receivePacket.getPort(), processedACKBlocks, verboseMode); //transfer the file to the client if reading
 			} else if (request == Request.WRITE) {
 				byte[] response = writeResp;
-				send(response);
+				send(response); //send ack if receiving data packets for write
 			}
 		}
 
+		/**
+		 * Send a packet to the client
+		 * @param response the bytes of the packet to be sent
+		 */
 		private void send(byte[] response) {
 			sendPacket = new DatagramPacket(response, response.length, receivePacket.getAddress(),
-					receivePacket.getPort());
+					receivePacket.getPort()); //create a packet with the data
 
 			int len = sendPacket.getLength();
 			if (verboseMode) {
@@ -203,7 +208,7 @@ public class TFTPClientConnectionThread extends TFTPFunctions implements Runnabl
 				verboseMode(sendPacket.getAddress(), sendPacket.getPort(), len, response);
 			}
 
-			sendPacketFromSocket(sendReceiveSocket, sendPacket);
+			sendPacketFromSocket(sendReceiveSocket, sendPacket); //send the packet
 			System.out
 					.println("TFTPClientConnectionThread: packet sent using port " + sendReceiveSocket.getLocalPort());
 			receiveFiles(serverDirectory + "\\" + fileName, sendReceiveSocket.getLocalPort(), "Server",
@@ -211,7 +216,5 @@ public class TFTPClientConnectionThread extends TFTPFunctions implements Runnabl
 			// We're finished with this socket, so close it.
 			sendReceiveSocket.close();
 		}
-
 	}
-
 }

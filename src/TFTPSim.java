@@ -16,16 +16,17 @@ public class TFTPSim extends TFTPFunctions {
 	// UDP datagram packets and sockets used to send / receive
 	private DatagramPacket sendPacket, receivePacket;
 	private DatagramSocket receiveSocket, sendSocket, sendReceiveSocket;
+	private static boolean verboseMode = true; // false for quiet and true for verbose
+	private InetAddress clientAddress; //the address of the client
+	private static InetAddress serverAddress = null; // the address of the server
+	static String ipAddress = ""; //the ip address of the server
+	private int clientPort, serverPort = 69;
+
 	private static long delayTime = 0;
 	private static int packetNumber = 0;
-	private static boolean verboseMode = true; // false for quiet and true for verbose
 	private static Type packetType;
-	private int clientPort, serverPort = 69;
-	private InetAddress clientAddress;
-	private static InetAddress serverAddress = null;
-	static String ipAddress = "";
 
-	public static enum Type {
+	public static enum Type { //the types of packets that the error sim can perform operations on
 		RRQ, WRQ, REQ, DATA, ACK
 	};
 
@@ -36,9 +37,9 @@ public class TFTPSim extends TFTPFunctions {
 	public static enum Err4Mode { // options for simulating error 4
 		OPCODE, BLOCKNUM, FILENAME, MODE
 	};
+	private static Err4Mode err4Mode;
 
 	private static Mode mode = Mode.NORMAL;
-	private static Err4Mode err4Mode;
 
 	public TFTPSim() {
 		try {
@@ -57,6 +58,9 @@ public class TFTPSim extends TFTPFunctions {
 		}
 	}
 	
+	/**
+	 * Delays a packet before sending to the recipient
+	 */
 	public void delayMode() {
 		try {
 			System.out.println("------------------------------------------------------\nDelaying " + packetType
@@ -69,6 +73,17 @@ public class TFTPSim extends TFTPFunctions {
 		}
 	}
 	
+	/**
+	 * Creates a duplicate packet
+	 * @param data the data in the packet
+	 * @param len the length of the data
+	 * @param address the address of the destination
+	 * @param port the port number of the destination
+	 * @param src the sender of the packet
+	 * @param dest the destination of the packet
+	 * @param packetCount the block number
+	 * @param receivedType the type (DATA, ACK, etc...) of packet that's received 
+	 */
 	public void duplicateMode(byte[] data, int len, InetAddress address, int port, String src, String dest, int packetCount, Type receivedType) {
 		sendPacket = new DatagramPacket(data, len, address, port);
 		len = sendPacket.getLength();
@@ -78,13 +93,19 @@ public class TFTPSim extends TFTPFunctions {
 			System.out.println("Packet type: " + receivedType);
 			verboseMode(sendPacket.getAddress(), sendPacket.getPort(), len, data);
 		}
-
+		
+		// Send the duplicate datagram packet to the server via the send/receive socket.
 		if (src.equals("server")) sendPacketFromSocket(sendSocket, sendPacket);
 		else sendPacketFromSocket(sendReceiveSocket, sendPacket);
-		// Send the duplicate datagram packet to the server via the send/receive socket.
-		
+
 	}
 	
+	/**
+	 * Loses a packet
+	 * @param socket the receive socket
+	 * @param receivedType the type (DATA, ACK, etc...) of packet that's received 
+	 * @param isClient true if packet was from client
+	 */
 	public void lossMode(DatagramSocket socket, Type receivedType, boolean isClient) {
 		System.out.println("------------------------------------------------------\nLosing " + packetType
 				+ " packet number " + packetNumber + "...");
@@ -108,10 +129,13 @@ public class TFTPSim extends TFTPFunctions {
 			System.out.println("Simulator: Packet received:");
 			verboseMode(receivePacket.getAddress(), receivePacket.getPort(), len, data);
 		}
-
-		//clientAddress = receivePacket.getAddress();
 	}
 	
+	/**
+	 * Parses the bytes from a packet to see which packet type it is
+	 * @param data the data in a packet
+	 * @return the Type of the data (DATA, ACK, etc...)
+	 */
 	public Type getType(byte[] data) {
 		Type type = null;
 		if (data[1] == 1)
@@ -124,49 +148,52 @@ public class TFTPSim extends TFTPFunctions {
 			type = Type.ACK;
 		return type;
 	}
-	
+	/**
+	 * Receives from the client and send to the server and
+	 * receives from server and send to client
+	 * @throws IOException
+	 */
 	public void passOnTFTP() throws IOException {
 		byte[] data;
 
 		//int clientPort, serverPort = 69,
 		int j = 0, len, packetCount = 0;
 		//InetAddress clientAdress;
-int k=0;
+		int k=0;
 		for (;;) { // loop forever
 
 			data = new byte[516];
 			receivePacket = new DatagramPacket(data, data.length);
 
 			System.out.println("Simulator: Waiting for packet.");
-			receivePacketFromSocket(receiveSocket, receivePacket);
+			receivePacketFromSocket(receiveSocket, receivePacket); //receives packet
 
 			// Process the received datagram.
 			len = receivePacket.getLength();
-			if(k==0)
-			clientPort = receivePacket.getPort();
+			
+			if(k==0) { //only need to set the client port and address on the first packet
+				clientPort = receivePacket.getPort();
+				clientAddress = receivePacket.getAddress();
+			}
+			k++;
 			
 			if (verboseMode) {
 				System.out.println("Simulator: Packet received:");
 				verboseMode(receivePacket.getAddress(), clientPort, len, data);
 			}
 
-			if (k==0)
-			clientAddress = receivePacket.getAddress();
-
-			
 			// Save the type of the received packet
 			Type receivedType = getType(data);
 
-			if (packetType == receivedType)
+			if (packetType == receivedType) //increment the packet type counter if the packet is the same type as the one that's setup for the error sim
 				packetCount++;
 
-			// Perform delayed packet if selected
-			// the packet type matches the one chose in configurations
+			// Perform delayed packet if the selected packet type matches the one chose in configurations
 			if (mode == Mode.DELAY && packetCount == packetNumber && receivedType == packetType) {
 				delayMode();
-			} else if (mode == Mode.DUPLICATE && packetCount == packetNumber && receivedType == packetType) {
+			} else if (mode == Mode.DUPLICATE && packetCount == packetNumber && receivedType == packetType) {// Perform duplicate packet if the selected packet type matches the one chose in configurations
 				duplicateMode(data, len, serverAddress, serverPort, "client", "server", packetCount, receivedType);
-			} else if (mode == Mode.LOSS && packetCount == packetNumber && receivedType == packetType) {
+			} else if (mode == Mode.LOSS && packetCount == packetNumber && receivedType == packetType) {// Perform loss packet if the selected packet type matches the one chose in configurations
 				lossMode(receiveSocket, receivedType, true);
 				receivedType = getType(data);
 				if (packetType == receivedType)
@@ -182,13 +209,13 @@ int k=0;
 			// Construct a datagram packet that is to be sent to a specified port
 			// on a specified host.
 			if ((mode == Mode.ERROR4 && packetCount == packetNumber && receivedType == packetType)
-					|| (mode == Mode.ERROR4 && (err4Mode == Err4Mode.FILENAME || err4Mode == Err4Mode.MODE))) {
+					|| (mode == Mode.ERROR4 && (err4Mode == Err4Mode.FILENAME || err4Mode == Err4Mode.MODE))) { //Perform error 4 scenario if the selected packet type matches the one chose in configurations
 				sendPacket = error4Packet(data, serverPort, serverAddress, len);
 				mode = Mode.NORMAL;
 			} else {
 				sendPacket = new DatagramPacket(data, len, serverAddress, serverPort);
 				// Test an 'unknown' TID
-				if (mode == Mode.ERROR5 && packetCount == packetNumber && receivedType == packetType) {
+				if (mode == Mode.ERROR5 && packetCount == packetNumber && receivedType == packetType) { //Perform error 5 scenario if the selected packet type matches the one chose in configurations
 					System.out.println("\nSimulator:  sending a packet with an 'unknown' TID from client to server.");
 					createUnknownTIDTestThread(sendPacket);
 				}
@@ -361,8 +388,9 @@ int k=0;
 				mode = Mode.ERROR5;
 		}
 		System.out.println("Running in " + mode + " mode");
-
-		if (mode == Mode.ERROR4) { // sub menu for error 4 options
+		
+		// sub menu for error 4 options
+		if (mode == Mode.ERROR4) {
 			input = "";
 			while (!(input.equals("0") || input.equals("1") || input.equals("2") || input.equals("3"))) {
 				System.out.print(
@@ -381,7 +409,7 @@ int k=0;
 			}
 			System.out.println("Simulating error 4 with " + err4Mode + " issue.");
 		}
-
+		
 		if (!(mode == Mode.NORMAL
 				|| (mode == Mode.ERROR4 && (err4Mode == Err4Mode.FILENAME || err4Mode == Err4Mode.MODE)))) {
 			input = "";
@@ -426,7 +454,7 @@ int k=0;
 			}
 			System.out.println(mode + " error simulation wil be performed on " + packetType + " packet " + packetNumber);
 			
-
+			//prompt user for delay time (if simulating delay packet)
 			if (mode == Mode.DELAY) {
 				input = "";
 				invalid = true; // used to break while loop when the entered input is a valid number
@@ -446,7 +474,7 @@ int k=0;
 		}
 
 		boolean changeSettings = true;
-		if (serverAddress != null) { //not first time configuring
+		if (serverAddress != null) { //if first time running, we must goto the configurations menu
 			input = " ";
 			System.out.println("\nEnter 1 to change configurations or nothing to leave unchanged: ");
 			while (!(input.equals("1") || input.equals(""))) {
@@ -455,6 +483,7 @@ int k=0;
 				else changeSettings = false;
 			}
 		}
+		//Configure error sim settings (quiet or verbose, ip address)
 		if (changeSettings) {
 			input = " ";
 			// option to toggle verbose or quiets mode
@@ -501,7 +530,7 @@ int k=0;
 	}
 
 	/**
-	 * 
+	 * Create new thread to send packet from a different port
 	 * @param packet
 	 */
 	private void createUnknownTIDTestThread(DatagramPacket packet) {
@@ -555,24 +584,24 @@ int k=0;
 	}
 
 	/**
-	 * 
-	 * @param data
-	 * @param port
-	 * @param clientAdress
-	 * @return
+	 * Creates a packet with error 4
+	 * @param data the bytes of the packet to modify
+	 * @param port the port to send to
+	 * @param adress the address to send to
+	 * @return the modified packet
 	 */
-	public DatagramPacket error4Packet(byte[] data, int port, InetAddress clientAdress, int len) {
+	public DatagramPacket error4Packet(byte[] data, int port, InetAddress adress, int len) {
 		DatagramPacket sendPacket = null;
-
-		if (err4Mode == Err4Mode.OPCODE) {
-			data[0] = 9;
+		
+		if (err4Mode == Err4Mode.OPCODE) { //changing the opcode to 09
+			data[0] = 0;
 			data[1] = 9;
 			System.out.println(
 					"-------------------------------Creating packet with invalid opcode-------------------------------");
-			sendPacket = new DatagramPacket(data, len, clientAdress, port);
+			sendPacket = new DatagramPacket(data, len, adress, port);
 		}
 
-		if (err4Mode == Err4Mode.FILENAME) {
+		if (err4Mode == Err4Mode.FILENAME) { //dremoving the file name from packet
 			byte[] temporary = new byte[len];
 			temporary[0] = data[0];
 			temporary[1] = data[1];
@@ -585,24 +614,24 @@ int k=0;
 			System.arraycopy(data, i, temporary, 2, len - 2);
 			System.out.println(
 					"---------------------------------Creating packet with invalid file name---------------------------------");
-			sendPacket = new DatagramPacket(temporary, temporary.length, clientAdress, port);
+			sendPacket = new DatagramPacket(temporary, temporary.length, adress, port);
 		}
 
-		if (err4Mode == Err4Mode.MODE) {
+		if (err4Mode == Err4Mode.MODE) {// changing the mode to "pctect" (should be "octect")
 			byte[] temporary = new byte[len];
 			System.arraycopy(data, 0, temporary, 0, len - 6);
 			System.arraycopy("pctet".getBytes(), 0, temporary, temporary.length - 6, 5);
 			System.out.println(
 					"---------------------------------Creating packet with invalid mode---------------------------------");
-			sendPacket = new DatagramPacket(temporary, temporary.length, clientAdress, port);
+			sendPacket = new DatagramPacket(temporary, temporary.length, adress, port);
 		}
 
-		if (err4Mode == Err4Mode.BLOCKNUM) {
+		if (err4Mode == Err4Mode.BLOCKNUM) { //changing the block number
 			// Byte 3 is always the second block number byte
 			data[3] = (byte) (data[2] + 3); // adding 3 to block number
 			System.out.println(
 					"---------------------------------Creating packet with out of synch block number---------------------------------");
-			sendPacket = new DatagramPacket(data, len, clientAdress, port);
+			sendPacket = new DatagramPacket(data, len, adress, port);
 		}
 		return sendPacket;
 	}
