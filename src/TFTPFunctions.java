@@ -1,3 +1,10 @@
+/**
+ * Common methods that are used by the TFTPClient, TFTPSim, and TFTPClientConnectionThread.
+ * Mainly for sending and receiving packets.
+ * 
+ * @author Team 8
+ */
+
 import java.io.*;
 import java.net.*;
 import java.util.ArrayList;

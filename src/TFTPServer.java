@@ -1,13 +1,3 @@
-//package Iteration1;
-
-// TFTPServer.java
-// This class is the server side of a simple TFTP server based on
-// UDP/IP. The server receives a read or write packet from a client and
-// sends back the appropriate response without any actual file transfer.
-// One socket (69) is used to receive (it stays open) and another for each response. 
-
-import java.util.Scanner;
-
 /**
  * The server is a java program that consists of multiple Java threads. The server must be capable
  * of supporting multiple concurrent read and write connections with different clients. The server will
@@ -16,9 +6,11 @@ import java.util.Scanner;
  * 1) Create another thread, and pass it the TFTP packet to deal with
  * 2) Go back to waiting on port 69 for another request
  * 
- * @author
+ * @author Team 8
  *
  */
+import java.util.Scanner;
+
 public class TFTPServer {
 	// UDP datagram packets and sockets used to send / receive
 	private static boolean verboseMode = false; // false for quiet and true for verbose
@@ -34,9 +26,6 @@ public class TFTPServer {
 	/**
 	 * Launches the thread for receiving data and continuously runs the server's
 	 * GUI.
-	 * 
-	 * @param args
-	 * @throws Exception
 	 */
 	public void receiveAndSendTFTP() {
 		Scanner sc = new Scanner(System.in);
@@ -74,9 +63,6 @@ public class TFTPServer {
 	 * "Menu" for configuring the settings of client application. Client is able
 	 * to determine what modes to toggle between verboseMode and quietMode as
 	 * well as enter the correct server directory to begin file transfer.
-	 * 
-	 * @param args
-	 * @throws Exception
 	 */
 	public static void configServer() {
 		Scanner sc = new Scanner(System.in); // scanner for getting user's input

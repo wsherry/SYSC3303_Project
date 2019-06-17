@@ -1,3 +1,10 @@
+/**
+ * Thread that establishes a connection with the client,
+ * creates a new thread for sending packets and receives packets.
+ * 
+ * @author Team 8
+ */
+
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -160,6 +167,11 @@ public class TFTPClientConnectionThread extends TFTPFunctions implements Runnabl
 		} // end of loop
 	}
 
+	/**
+	 * Thread for sending packets
+	 * 
+	 * @author Team 8
+	 */
 	public class TFTPsendThread implements Runnable {
 
 		private DatagramSocket sendReceiveSocket;

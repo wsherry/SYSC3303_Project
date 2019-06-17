@@ -1,11 +1,13 @@
-
-// TFTPSim.java
-// This class is the beginnings of an error simulator for a simple TFTP server 
-// based on UDP/IP. The simulator receives a read or write packet from a client and
-// passes it on to the server.  Upon receiving a response, it passes it on to the 
-// client.
-// One socket (23) is used to receive from the client, and another to send/receive
-// from the server.  A new socket is used for each communication back to the client.   
+/**
+ * This class is the beginnings of an error simulator for a simple TFTP server
+ * based on UDP/IP. The simulator receives a read or write packet from a client and
+ * passes it on to the server. Upon receiving a response, it will perform a and
+ * error simulation to the packet (if not running in normal mode) and passes it on to the client.
+ * One socket (23) is used to receive from the client, and another to send/receive
+ * from the server.  A new socket is used for each communication back to the client.  
+ *
+ *@author Team 8
+ */
 
 import java.io.*;
 import java.net.*;
@@ -588,6 +590,7 @@ public class TFTPSim extends TFTPFunctions {
 	 * @param data the bytes of the packet to modify
 	 * @param port the port to send to
 	 * @param adress the address to send to
+	 * @param the length of the data
 	 * @return the modified packet
 	 */
 	public DatagramPacket error4Packet(byte[] data, int port, InetAddress adress, int len) {
