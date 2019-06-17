@@ -107,7 +107,6 @@ Pragya Singh:
 
 Iteration 5: 
 Alexei Tchekansky:
-
 Implemented the code to handle missing parts of error code 4.
 
 Ben Bozec:
@@ -117,7 +116,7 @@ Alan Lin:
 Fixed a bug that was not allowing duplicate packets from being handled properly. 7=6yWrote out detailed setup instructions
 
 Pragya Singh:
-Wrote, edited and formatted the report. Redo some diagrams as they were incorrect and or unclear.
+Wrote, edited and formatted the report. Redo some diagrams as they were incorrect and or unclear.Added in class diagram for Iteration 5.
 
 Sherry Wang: 
 Fixed a bug that was not allowing duplicate packets from being handled properly. 
