@@ -257,7 +257,8 @@ and a zip file called "Team8_Project_IT4" which contains all the Java code. Unzi
 ** run in the above order**
 
 Iteration 5 Instructions:
-1.	In this directory, there's a folder called "Iteration4_Diagrams", which contains the associated diagrams for this program. and a zip file called "Team8_Project_IT4" which contains all the Java code. Unzip this file.
+1.	In this directory, there's a folder called "Test Files", which contains the files we used for testing; a pdf called "SYSC 3303 Project Report.pdf", which is contains the final report with all the diagraml;
+	and  a zip file called "Team8_Project_IT5" which contains all the Java code and doccumentation. Unzip this file.
 2.	After unzipping the "Team8_Project_IT4", in Eclipse, click "Open Project from file system" and select the directory with the unzipped files.
 3.	Once all the files are loaded, first run server.java as java application and follow the command line prompts. These prompts are explained in 3.1.x. 
 	3.1.1 Option to run in quiet or verbose mode. Verbose mode will print out the packets that are being received and sent, quiet does not. 
