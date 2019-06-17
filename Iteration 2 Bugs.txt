@@ -1,7 +1,0 @@
-IT2 Bugs:
-
-- Port 69
-- Read Request failed
-- Duplicate ACK packets
-- Missing data in file
-- Resend skips packet
